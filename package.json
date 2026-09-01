@@ -1,0 +1,13 @@
+{
+  "name": "smartconveyor-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "client": "npm --prefix client run dev -- --host --port 3000",
+    "build": "npm --prefix client run build",
+    "ml": "cd ml/service && python -m uvicorn main:app --host 0.0.0.0 --port 8000",
+    "simulate": "npm --prefix server/functions run simulate"
+  }
+}

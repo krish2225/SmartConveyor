@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "severity", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "visionEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isDefect", "order": "ASCENDING" },
+        { "fieldPath": "firstDetected", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
