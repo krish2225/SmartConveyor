@@ -26,7 +26,6 @@ export const SAMPLE_CONVEYOR_SCANS = [
     severity: 'CRITICAL',
     consecutiveFrameCount: 4,
     imageUrl: spliceDelamImg,
-    // Real normalized bounding box around frayed steel cords & torn rubber flap in photo
     boundingBox: {
       x: 0.28,
       y: 0.28,
@@ -63,7 +62,6 @@ export const SAMPLE_CONVEYOR_SCANS = [
     severity: 'CRITICAL',
     consecutiveFrameCount: 3,
     imageUrl: longTearImg,
-    // Real normalized bounding box around center longitudinal tear
     boundingBox: {
       x: 0.28,
       y: 0.20,
@@ -100,7 +98,6 @@ export const SAMPLE_CONVEYOR_SCANS = [
     severity: 'WARNING',
     consecutiveFrameCount: 2,
     imageUrl: surfaceCrackImg,
-    // Real normalized bounding box around transverse fatigue cracks
     boundingBox: {
       x: 0.18,
       y: 0.22,
@@ -123,21 +120,21 @@ export const SAMPLE_CONVEYOR_SCANS = [
   },
   {
     incidentId: 'INC-VIS-04',
-    frameId: 'SCAN-FRM-0992',
-    beltDistanceMeters: 200.0,
-    linkedJointId: 'Joint-02',
-    linkedJointName: 'Joint 02 (Tensioning Zone Splice)',
-    sector: 'Sector 1 (Drive Station Discharge Hood)',
-    camera: 'CAM-01A | Head Pulley Radiometric Scanner',
+    frameId: 'SCAN-FRM-1002',
+    beltDistanceMeters: 180.0,
+    linkedJointId: 'Joint-01',
+    linkedJointName: 'Joint 01 (Head Vulcanized Splice)',
+    sector: 'Sector 1 (Main Transfer Gallery)',
+    camera: 'CAM-01A | Main Line Optical Scanner',
     timestamp: new Date(Date.now() - 2400000).toISOString(),
-    classification: 'NOMINAL - Clean Splice Integrity',
+    classification: 'NOMINAL - Clean Belt Surface & Splice Integrity',
     defectType: 'Nominal Surface',
     isDefect: false,
-    confidence: 0.989,
+    confidence: 0.992,
     severity: 'NOMINAL',
-    consecutiveFrameCount: 1,
+    consecutiveFrameCount: 0,
     imageUrl: normalBeltImg,
-    boundingBox: null,
+    boundingBox: null, // NO BOUNDING BOX FOR NOMINAL CLEAN BELT
     defectParameters: {
       lengthMm: 0.0,
       widthMm: 0.0,
@@ -148,7 +145,7 @@ export const SAMPLE_CONVEYOR_SCANS = [
       thermalHotspotTempC: 42.1,
       beltThicknessMm: 24.8
     },
-    recommendedAction: 'Splice profile within prime nominal tolerances. Continue continuous hauling.'
+    recommendedAction: 'Belt surface and splice alignment within nominal tolerances. Continue continuous hauling.'
   },
   {
     incidentId: 'INC-VIS-05',

@@ -60,7 +60,7 @@ export default function HealthRiskGauge({
       />
 
       <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-        
+
         {/* Left: Gauge Circle */}
         <div className="relative flex items-center justify-center shrink-0">
           <svg className="w-48 h-48 transform -rotate-90">
@@ -110,7 +110,7 @@ export default function HealthRiskGauge({
                 ● ML Predictive Intelligence
               </span>
               <span className="text-xs text-slate-500 font-mono">|</span>
-              <span className="text-xs text-slate-400 font-mono">SIH PS 26008</span>
+
             </div>
             <h2 className="text-xl font-bold text-white mt-1">
               {theme.title}
@@ -122,7 +122,7 @@ export default function HealthRiskGauge({
 
           {/* Key Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            
+
             {/* ETTF Card */}
             <div className="bg-[#0a0d14]/80 border border-[#1f293d] rounded-xl p-3">
               <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">

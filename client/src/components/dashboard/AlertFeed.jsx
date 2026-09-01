@@ -45,7 +45,7 @@ export default function AlertFeed({
 
   return (
     <div className="bg-[#111726] border border-[#1f293d] rounded-2xl p-5 flex flex-col justify-between h-full">
-      
+
       {/* Header */}
       <div>
         <div className="flex items-center justify-between gap-2 mb-4">
@@ -90,8 +90,8 @@ export default function AlertFeed({
                     isCritical
                       ? 'bg-red-950/30 border-red-500/40 hover:border-red-400'
                       : isWarning
-                      ? 'bg-amber-950/20 border-amber-500/30 hover:border-amber-400'
-                      : 'bg-[#0a0d14]/70 border-[#1f293d] hover:border-slate-600'
+                        ? 'bg-amber-950/20 border-amber-500/30 hover:border-amber-400'
+                        : 'bg-[#0a0d14]/70 border-[#1f293d] hover:border-slate-600'
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -153,7 +153,7 @@ export default function AlertFeed({
 
       {/* Footer info */}
       <div className="mt-4 pt-3 border-t border-[#1f293d] flex items-center justify-between text-[11px] text-slate-400 font-mono">
-        <span>Autonomous SIH Alarm Engine</span>
+        <span>Autonomous Alarm Engine</span>
         <span className="text-emerald-400">Active</span>
       </div>
 

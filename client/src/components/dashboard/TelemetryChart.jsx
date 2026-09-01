@@ -45,7 +45,7 @@ export default function TelemetryChart({ telemetryHistory = [], isDumping = fals
 
   return (
     <div className="bg-[#111726] border border-[#1f293d] rounded-2xl p-5">
-      
+
       {/* Header Controls */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export default function TelemetryChart({ telemetryHistory = [], isDumping = fals
               }}
               labelStyle={{ color: '#00e5ff', fontWeight: 'bold' }}
             />
-            
+
             {activeChannels.drive_vibration && (
               <Line
                 type="monotone"
@@ -192,7 +192,7 @@ export default function TelemetryChart({ telemetryHistory = [], isDumping = fals
 
       <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400 font-mono">
         <span>Continuous rolling buffer: last 30 readings (1.5s sampling rate)</span>
-        <span className="text-cyan-400">SIH IoT Edge Telemetry</span>
+        <span className="text-cyan-400"> IoT Edge Telemetry</span>
       </div>
 
     </div>
