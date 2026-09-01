@@ -1,20 +1,30 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import clsx from 'clsx';
+import { useBackendStatus } from '../../hooks/useBackendStatus.js';
 import {
   LayoutDashboard,
-  Boxes,
+  Box,
   Camera,
-  HeartPulse,
+  Activity,
   BellRing,
-  FileSpreadsheet,
+  FileText,
   Settings,
-  Shield,
+  ShieldCheck,
   Zap,
-  Info
+  Radio,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
+import clsx from 'clsx';
 
-export default function Sidebar({ isOpen, onClose, activeAlertCount = 0, currentUser }) {
+export default function Sidebar({
+  isOpen,
+  onClose,
+  currentUser,
+  alertsCount = 0
+}) {
+  const backend = useBackendStatus();
+
   const navItems = [
     {
       to: '/',
@@ -26,8 +36,9 @@ export default function Sidebar({ isOpen, onClose, activeAlertCount = 0, current
     {
       to: '/digital-twin',
       label: '3D Digital Twin',
-      icon: Boxes,
+      icon: Box,
       badge: '3D',
+      badgeColor: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
       description: 'Interactive Belt & Splice Mesh'
     },
     {
@@ -35,12 +46,13 @@ export default function Sidebar({ isOpen, onClose, activeAlertCount = 0, current
       label: 'Vision Monitoring',
       icon: Camera,
       badge: 'AI',
+      badgeColor: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
       description: 'Line-Scan Surface Inspection'
     },
     {
       to: '/sensor-health',
       label: 'Sensor Health',
-      icon: HeartPulse,
+      icon: Activity,
       badge: null,
       description: 'Reliability Index & Jitter'
     },
@@ -48,14 +60,14 @@ export default function Sidebar({ isOpen, onClose, activeAlertCount = 0, current
       to: '/alerts',
       label: 'Alerts Feed',
       icon: BellRing,
-      badge: activeAlertCount > 0 ? activeAlertCount : null,
-      badgeColor: 'bg-red-500 text-white',
+      badge: alertsCount > 0 ? String(alertsCount) : null,
+      badgeColor: 'bg-red-500 text-white animate-pulse',
       description: 'Active & Acknowledged Events'
     },
     {
       to: '/reports',
       label: 'Reports & Logs',
-      icon: FileSpreadsheet,
+      icon: FileText,
       badge: null,
       description: 'Maintenance & Compliance Audit'
     },
@@ -135,20 +147,47 @@ export default function Sidebar({ isOpen, onClose, activeAlertCount = 0, current
           </nav>
         </div>
 
-        {/* Bottom Hardware Info Card */}
-        <div className="p-3 m-3 bg-[#111726] border border-[#1f293d] rounded-xl text-xs space-y-2">
-          <div className="flex items-center gap-2 text-cyan-400 font-mono text-[11px] font-bold uppercase">
-            <Zap className="w-3.5 h-3.5" />
-            Edge Inference Node
+        {/* Live Backend Connection Status Card */}
+        <div className={clsx(
+          'p-3 m-3 rounded-xl text-xs space-y-2 border transition-all',
+          backend.isOnline
+            ? 'bg-[#111726] border-emerald-500/40 shadow-sm'
+            : 'bg-red-950/20 border-red-500/40'
+        )}>
+          <div className="flex items-center justify-between gap-1 text-[11px] font-mono font-bold uppercase">
+            <div className="flex items-center gap-1.5">
+              {backend.isOnline ? (
+                <Wifi className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+              ) : (
+                <WifiOff className="w-3.5 h-3.5 text-red-400 animate-bounce" />
+              )}
+              <span className={backend.isOnline ? 'text-emerald-400' : 'text-red-400'}>
+                ML BACKEND {backend.isOnline ? 'ONLINE' : 'OFFLINE'}
+              </span>
+            </div>
+            {backend.isOnline && (
+              <span className="text-[10px] text-emerald-400 font-bold font-mono">
+                {backend.latencyMs}ms
+              </span>
+            )}
           </div>
-          <div className="text-[11px] text-slate-300 leading-relaxed">
-            FastAPI microservice connected. Isolation Forest &amp; XGBoost RUL active.
+
+          <div className="text-[10px] text-slate-300 leading-relaxed font-mono">
+            {backend.isOnline ? (
+              <span>FastAPI active (port 8000). XGBoost RUL, Isolation Forest &amp; YOLOv8 connected.</span>
+            ) : (
+              <span className="text-red-300">FastAPI offline on port 8000. Run <code>python -m uvicorn main:app</code> to start backend.</span>
+            )}
           </div>
-          <div className="pt-2 border-t border-[#1f293d] flex items-center justify-between text-[10px] font-mono text-slate-400">
-            <span>Sampling: 20Hz</span>
-            <span className="text-emerald-400 font-semibold">100% Synced</span>
+
+          <div className="pt-1.5 border-t border-[#1f293d] flex items-center justify-between text-[10px] font-mono text-slate-400">
+            <span>Port: 8000</span>
+            <span className={backend.isOnline ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
+              {backend.isOnline ? '100% Synced' : 'Disconnected'}
+            </span>
           </div>
         </div>
+
       </aside>
     </>
   );

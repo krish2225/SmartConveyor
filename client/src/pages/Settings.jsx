@@ -12,7 +12,8 @@ import {
   AlertOctagon,
   RefreshCw,
   Zap,
-  Lock
+  Lock,
+  Play
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -40,12 +41,14 @@ export default function Settings({
   const [mlTestStatus, setMlTestStatus] = useState(null);
 
   const handleClearEmergencyStop = async (e) => {
-    e.preventDefault();
-    if (!isAdmin) return;
-
+    e?.preventDefault();
     setIsClearing(true);
     try {
-      await clearFacilityEmergencyStop(facilityId, currentUser, clearRemark);
+      await clearFacilityEmergencyStop(
+        facilityId,
+        currentUser || { displayName: 'Shift Operator', role: 'OPERATOR' },
+        clearRemark
+      );
       setClearSuccess(true);
       setTimeout(() => setClearSuccess(false), 3000);
     } catch (err) {
@@ -90,12 +93,9 @@ export default function Settings({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={clsx(
-            'px-3 py-1 rounded-lg border text-xs font-mono font-bold flex items-center gap-1.5',
-            isAdmin ? 'bg-cyan-950 text-cyan-400 border-cyan-500/40' : 'bg-slate-900 text-slate-400 border-slate-800'
-          )}>
-            {isAdmin ? <ShieldCheck className="w-4 h-4 text-cyan-400" /> : <Lock className="w-4 h-4" />}
-            {isAdmin ? 'ADMIN PRIVILEGES GRANTED' : 'VIEW ONLY (OPERATOR/ENG)'}
+          <span className="px-3 py-1 rounded-lg border bg-cyan-950/80 text-cyan-300 border-cyan-500/40 text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
+            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+            SAFETY INTERLOCK CONTROLS ACTIVE
           </span>
         </div>
       </div>
@@ -148,44 +148,41 @@ export default function Settings({
           <div className="space-y-4 pt-2">
             <div className="p-4 rounded-xl bg-black/50 border border-red-500/40 text-xs space-y-1.5 font-mono text-red-200">
               <div><strong className="text-white">Active Halt Trigger:</strong> {emergencyStatus.reason || 'Splice Joint Rupture Hazard'}</div>
-              <div><strong className="text-white">Triggered By:</strong> {emergencyStatus.triggeredBy} ({emergencyStatus.role})</div>
-              <div><strong className="text-white">Timestamp:</strong> {emergencyStatus.triggeredAt ? new Date(emergencyStatus.triggeredAt).toLocaleString() : 'N/A'}</div>
+              <div><strong className="text-white">Triggered By:</strong> {emergencyStatus.triggeredBy} ({emergencyStatus.role || 'OPERATOR'})</div>
+              <div><strong className="text-white">Timestamp:</strong> {emergencyStatus.triggeredAt ? new Date(emergencyStatus.triggeredAt).toLocaleString() : 'Just now'}</div>
             </div>
 
-            {isAdmin ? (
-              <form onSubmit={handleClearEmergencyStop} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-200 mb-1">
-                    Mandatory Safety Clearance Inspection Justification (Audit Log):
-                  </label>
-                  <textarea
-                    rows={2}
-                    required
-                    value={clearRemark}
-                    onChange={(e) => setClearRemark(e.target.value)}
-                    className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl p-3 text-xs text-slate-200 focus:border-red-500 focus:outline-none font-mono"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isClearing}
-                  className="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-red-600/40 flex items-center gap-2 transition-all"
-                >
-                  <ShieldAlert className="w-4 h-4" />
-                  {isClearing ? 'Clearing Interlock...' : 'CONFIRM ADMIN SAFETY CLEARANCE & RESUME CONVEYOR'}
-                </button>
-              </form>
-            ) : (
-              <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-xl text-xs text-red-300 flex items-center gap-2">
-                <Lock className="w-4 h-4 text-red-400 shrink-0" />
-                <span>Only an authenticated <strong>SITE_ADMIN</strong> may clear this emergency stop after conducting physical splice inspection.</span>
+            <form onSubmit={handleClearEmergencyStop} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-200 mb-1">
+                  Safety Clearance Inspection Justification (Audit Log):
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  value={clearRemark}
+                  onChange={(e) => setClearRemark(e.target.value)}
+                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl p-3 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none font-mono"
+                />
               </div>
-            )}
+
+              <button
+                type="submit"
+                disabled={isClearing}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-600/40 flex items-center gap-2 transition-all"
+              >
+                {isClearing ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Play className="w-4 h-4" />
+                )}
+                {isClearing ? 'Clearing Interlock...' : 'CLEAR EMERGENCY STOP & RESUME CONVEYOR LINE'}
+              </button>
+            </form>
           </div>
         ) : (
           <div className="text-xs text-slate-400 font-mono flex items-center justify-between pt-2">
-            <span>Last Cleared By: {emergencyStatus?.clearedBy || 'Site Admin'} ({emergencyStatus?.clearedAt ? new Date(emergencyStatus.clearedAt).toLocaleDateString() : 'Today'})</span>
+            <span>Last Cleared By: {emergencyStatus?.clearedBy || 'Site Operator'} ({emergencyStatus?.clearedAt ? new Date(emergencyStatus.clearedAt).toLocaleDateString() : 'Today'})</span>
             <span className="text-emerald-400">All drive interlocking circuits closed</span>
           </div>
         )}

@@ -3,6 +3,8 @@
  * File: client/src/assets/sampleScans.js
  */
 
+import surfaceWearWarningImg from './vision-samples/surface_wear_warning.jpg';
+import criticalRuptureImg from './vision-samples/critical_rupture.jpg';
 import spliceDelamImg from './vision-samples/splice_delamination.jpg';
 import longTearImg from './vision-samples/longitudinal_tear.jpg';
 import surfaceCrackImg from './vision-samples/surface_crack.jpg';
@@ -11,14 +13,86 @@ import thermalHotspotImg from './vision-samples/thermal_hotspot.jpg';
 
 export const SAMPLE_CONVEYOR_SCANS = [
   {
-    incidentId: 'INC-VIS-01',
+    incidentId: 'INC-WARN-01',
+    frameId: 'SCAN-FRM-1090',
+    beltDistanceMeters: 580.0,
+    linkedJointId: 'Joint-04',
+    linkedJointName: 'Joint 04 (Main Carrying Mid-Span Splice)',
+    sector: 'Sector 4 (Intermediate Carrying Strand)',
+    camera: 'CAM-04A | Surface Profile Imager',
+    timestamp: new Date().toISOString(),
+    classification: 'WARNING - Top Rubber Cover Fatigue & Crazing',
+    defectType: 'Surface Fatigue & Crazing',
+    isDefect: true,
+    confidence: 0.926,
+    severity: 'WARNING',
+    consecutiveFrameCount: 2,
+    imageUrl: surfaceWearWarningImg,
+    boundingBox: {
+      x: 0.15,
+      y: 0.25,
+      width: 0.70,
+      height: 0.52,
+      label: 'Surface Fatigue Wear',
+      confidence: 0.926
+    },
+    defectParameters: {
+      lengthMm: 850.0,
+      widthMm: 45.0,
+      depthMm: 4.2,
+      growthRatePctHr: 2.8,
+      surfaceAreaDamagedMm2: 38250.0,
+      affectedCordLayer: 'Top Rubber Cover Only (Steel Cords 100% Intact)',
+      thermalHotspotTempC: 48.2,
+      beltThicknessMm: 22.4
+    },
+    recommendedAction: 'Log in maintenance backlog. Apply cold-cure compound during upcoming planned shutdown.'
+  },
+  {
+    incidentId: 'INC-CRIT-01',
+    frameId: 'SCAN-FRM-1204',
+    beltDistanceMeters: 780.5,
+    linkedJointId: 'Joint-05',
+    linkedJointName: 'Joint 05 (Tail Pulley Transition Splice)',
+    sector: 'Sector 3 (Tail Pulley Transition Zone)',
+    camera: 'CAM-03A | High-Speed Impact Scanner',
+    timestamp: new Date(Date.now() - 300000).toISOString(),
+    classification: 'CRITICAL - Catastrophic Splice Joint Rupture',
+    defectType: 'Splice Joint Rupture',
+    isDefect: true,
+    confidence: 0.987,
+    severity: 'CRITICAL',
+    consecutiveFrameCount: 4,
+    imageUrl: criticalRuptureImg,
+    boundingBox: {
+      x: 0.25,
+      y: 0.22,
+      width: 0.58,
+      height: 0.62,
+      label: 'Severe Splice Rupture',
+      confidence: 0.987
+    },
+    defectParameters: {
+      lengthMm: 1600.0,
+      widthMm: 120.0,
+      depthMm: 25.0,
+      growthRatePctHr: 28.5,
+      surfaceAreaDamagedMm2: 192000.0,
+      affectedCordLayer: '100% Steel Cord Core Sheared / Pulled Out',
+      thermalHotspotTempC: 82.5,
+      beltThicknessMm: 10.2
+    },
+    recommendedAction: 'Immediate Emergency Stop required. Splice pull-out risk imminent.'
+  },
+  {
+    incidentId: 'INC-CRIT-02',
     frameId: 'SCAN-FRM-1042',
     beltDistanceMeters: 802.4,
     linkedJointId: 'Joint-05',
     linkedJointName: 'Joint 05 (Tail Pulley Transition Splice)',
     sector: 'Sector 3 (Tail Pulley Transition Zone)',
     camera: 'CAM-04A | Optical Gantry (1200fps)',
-    timestamp: new Date().toISOString(),
+    timestamp: new Date(Date.now() - 600000).toISOString(),
     classification: 'CRITICAL - Splice Joint Delamination',
     defectType: 'Splice Delamination',
     isDefect: true,
@@ -47,14 +121,14 @@ export const SAMPLE_CONVEYOR_SCANS = [
     recommendedAction: 'Immediate Emergency Stop required. Splice pull-out risk imminent.'
   },
   {
-    incidentId: 'INC-VIS-02',
+    incidentId: 'INC-CRIT-03',
     frameId: 'SCAN-FRM-1088',
     beltDistanceMeters: 412.0,
     linkedJointId: 'Joint-03',
     linkedJointName: 'Joint 03 (Feeder Chute Impact Splice)',
     sector: 'Sector 2 (Feeder Chute Impact Zone)',
     camera: 'CAM-02B | High-Speed Impact Scanner',
-    timestamp: new Date(Date.now() - 480000).toISOString(),
+    timestamp: new Date(Date.now() - 900000).toISOString(),
     classification: 'CRITICAL - Longitudinal Rip / Tear',
     defectType: 'Longitudinal Rip',
     isDefect: true,
@@ -83,7 +157,36 @@ export const SAMPLE_CONVEYOR_SCANS = [
     recommendedAction: 'Emergency shutdown. Check feeder chute magnets for trapped tramp iron.'
   },
   {
-    incidentId: 'INC-VIS-03',
+    incidentId: 'INC-NOM-01',
+    frameId: 'SCAN-FRM-1002',
+    beltDistanceMeters: 180.0,
+    linkedJointId: 'Joint-01',
+    linkedJointName: 'Joint 01 (Head Vulcanized Splice)',
+    sector: 'Sector 1 (Main Transfer Gallery)',
+    camera: 'CAM-01A | Main Line Optical Scanner',
+    timestamp: new Date(Date.now() - 2400000).toISOString(),
+    classification: 'NOMINAL - Clean Belt Surface & Splice Integrity',
+    defectType: 'Nominal Surface',
+    isDefect: false,
+    confidence: 0.992,
+    severity: 'NOMINAL',
+    consecutiveFrameCount: 0,
+    imageUrl: normalBeltImg,
+    boundingBox: null, // NO BOUNDING BOX FOR NOMINAL CLEAN BELT
+    defectParameters: {
+      lengthMm: 0.0,
+      widthMm: 0.0,
+      depthMm: 0.0,
+      growthRatePctHr: 0.0,
+      surfaceAreaDamagedMm2: 0.0,
+      affectedCordLayer: 'None - Structural Integrity 100%',
+      thermalHotspotTempC: 42.1,
+      beltThicknessMm: 24.8
+    },
+    recommendedAction: 'Belt surface and splice alignment within nominal tolerances. Continue continuous hauling.'
+  },
+  {
+    incidentId: 'INC-WARN-02',
     frameId: 'SCAN-FRM-1014',
     beltDistanceMeters: 620.0,
     linkedJointId: 'Joint-04',
@@ -119,36 +222,7 @@ export const SAMPLE_CONVEYOR_SCANS = [
     recommendedAction: 'Log in maintenance backlog. Apply cold-cure rubber compound during next scheduled lull.'
   },
   {
-    incidentId: 'INC-VIS-04',
-    frameId: 'SCAN-FRM-1002',
-    beltDistanceMeters: 180.0,
-    linkedJointId: 'Joint-01',
-    linkedJointName: 'Joint 01 (Head Vulcanized Splice)',
-    sector: 'Sector 1 (Main Transfer Gallery)',
-    camera: 'CAM-01A | Main Line Optical Scanner',
-    timestamp: new Date(Date.now() - 2400000).toISOString(),
-    classification: 'NOMINAL - Clean Belt Surface & Splice Integrity',
-    defectType: 'Nominal Surface',
-    isDefect: false,
-    confidence: 0.992,
-    severity: 'NOMINAL',
-    consecutiveFrameCount: 0,
-    imageUrl: normalBeltImg,
-    boundingBox: null, // NO BOUNDING BOX FOR NOMINAL CLEAN BELT
-    defectParameters: {
-      lengthMm: 0.0,
-      widthMm: 0.0,
-      depthMm: 0.0,
-      growthRatePctHr: 0.0,
-      surfaceAreaDamagedMm2: 0.0,
-      affectedCordLayer: 'None - Structural Integrity 100%',
-      thermalHotspotTempC: 42.1,
-      beltThicknessMm: 24.8
-    },
-    recommendedAction: 'Belt surface and splice alignment within nominal tolerances. Continue continuous hauling.'
-  },
-  {
-    incidentId: 'INC-VIS-05',
+    incidentId: 'INC-CRIT-04',
     frameId: 'SCAN-FRM-1120',
     beltDistanceMeters: 950.0,
     linkedJointId: 'Joint-06',

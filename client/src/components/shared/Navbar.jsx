@@ -12,8 +12,8 @@ import {
   LogOut,
   Cpu,
   Clock,
-  Sun,
-  Moon
+  Flame,
+  Layers
 } from 'lucide-react';
 
 export default function Navbar({
@@ -24,7 +24,7 @@ export default function Navbar({
   emergencyStatus,
   onToggleSidebar
 }) {
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { theme, isHematite, toggleTheme } = useTheme();
   const [showStopModal, setShowStopModal] = useState(false);
   const [stopReason, setStopReason] = useState('Critical Splice Joint Rupture Detected');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,15 +59,15 @@ export default function Navbar({
             </button>
 
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
                 <Cpu className="w-5 h-5 text-slate-950 font-black" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-sm md:text-base tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-white bg-clip-text text-transparent">
+                  <span className="font-extrabold text-sm md:text-base tracking-tight bg-gradient-to-r from-amber-400 via-orange-300 to-amber-100 bg-clip-text text-transparent">
                     SmartConveyor
                   </span>
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-400 font-semibold hidden sm:inline-block">
+                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-500/30 text-amber-400 font-semibold hidden sm:inline-block">
                     SIH-26008
                   </span>
                 </div>
@@ -94,17 +94,23 @@ export default function Navbar({
           {/* Right: Theme Toggle, Quick Emergency Stop & Profile */}
           <div className="flex items-center gap-3">
             
-            {/* Theme Toggle Button (Sun / Moon) */}
+            {/* Theme Toggle Button (Hematite Ore Forge <-> Obsidian Dark) */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl bg-[#111726] hover:bg-slate-800 text-slate-300 hover:text-cyan-300 border border-[#1f293d] transition-all shadow-sm flex items-center justify-center"
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              aria-label="Toggle theme"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111726] hover:bg-slate-800 text-slate-300 hover:text-amber-300 border border-[#1f293d] hover:border-amber-500/50 transition-all shadow-sm text-xs font-mono font-bold"
+              title={isHematite ? "Switch to Obsidian Dark Mode" : "Switch to Hematite Ore Forge Mode"}
+              aria-label="Toggle theme mode"
             >
-              {isDark ? (
-                <Sun className="w-4 h-4 text-amber-400 animate-spin-slow" />
+              {isHematite ? (
+                <>
+                  <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                  <span className="hidden sm:inline text-amber-300">HEMATITE</span>
+                </>
               ) : (
-                <Moon className="w-4 h-4 text-cyan-500" />
+                <>
+                  <Layers className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="hidden sm:inline text-slate-300">OBSIDIAN</span>
+                </>
               )}
             </button>
 
@@ -125,7 +131,7 @@ export default function Navbar({
                 <div className="text-xs font-semibold text-slate-200">
                   {currentUser?.displayName || 'Control Operator'}
                 </div>
-                <div className="text-[10px] font-mono text-cyan-400 font-medium">
+                <div className="text-[10px] font-mono text-amber-400 font-medium">
                   {currentUser?.role?.replace('_', ' ') || 'OPERATOR'}
                 </div>
               </div>

@@ -6,9 +6,9 @@ export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     try {
       const saved = localStorage.getItem('smartconveyor_theme');
-      return saved === 'light' ? 'light' : 'dark';
+      return saved === 'hematite' ? 'hematite' : 'obsidian';
     } catch {
-      return 'dark';
+      return 'hematite'; // Default to the new stunning Hematite Ore theme
     }
   });
 
@@ -20,27 +20,27 @@ export function ThemeProvider({ children }) {
     }
 
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-      root.setAttribute('data-theme', 'dark');
+    if (theme === 'hematite') {
+      root.classList.add('theme-hematite');
+      root.classList.remove('theme-obsidian', 'theme-cyber', 'dark', 'light');
+      root.setAttribute('data-theme', 'hematite');
       root.style.colorScheme = 'dark';
     } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
-      root.setAttribute('data-theme', 'light');
-      root.style.colorScheme = 'light';
+      root.classList.add('theme-obsidian', 'dark');
+      root.classList.remove('theme-hematite', 'theme-cyber', 'light');
+      root.setAttribute('data-theme', 'obsidian');
+      root.style.colorScheme = 'dark';
     }
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+    setTheme(prev => (prev === 'hematite' ? 'obsidian' : 'hematite'));
   };
 
-  const isDark = theme === 'dark';
+  const isHematite = theme === 'hematite';
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, isHematite, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

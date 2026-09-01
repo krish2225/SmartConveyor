@@ -4,83 +4,91 @@
 
 :root {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}
-
-/* Dark mode (Default) */
-html.dark, :root {
   color-scheme: dark;
 }
 
-html.dark body, body {
+/* =========================================================
+   1. Default Obsidian Minimal Dark Theme
+   ========================================================= */
+body {
   margin: 0;
   background-color: #0a0d14;
   color: #f1f5f9;
   overflow-x: hidden;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Light mode theme overrides */
-html.light {
-  color-scheme: light;
+/* =========================================================
+   2. Hematite Forge & Titanium Carbon (NMDC Iron Ore Theme)
+   No blue colors — Authentic warm molten amber, copper, and titanium graphite
+   ========================================================= */
+html.theme-hematite body {
+  background-color: #090a0e;
+  color: #f3f4f6;
 }
 
-html.light body {
-  background-color: #f4f5f7;
-  color: #1a1c20;
+html.theme-hematite header {
+  background-color: #0f1118 !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 4px 25px -2px rgba(245, 158, 11, 0.12);
 }
 
-html.light header {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
+html.theme-hematite aside {
+  background-color: #0c0e14 !important;
+  border-color: rgba(69, 45, 25, 0.7) !important;
 }
 
-html.light aside {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+html.theme-hematite .bg-\[\#0a0d14\],
+html.theme-hematite .bg-\[\#0c101a\],
+html.theme-hematite .bg-\[\#080b12\],
+html.theme-hematite .bg-\[\#0d121f\],
+html.theme-hematite .bg-\[\#090c13\] {
+  background-color: #0c0e14 !important;
 }
 
-html.light .bg-\[\#0a0d14\],
-html.light .bg-\[\#0c101a\],
-html.light .bg-\[\#080b12\],
-html.light .bg-\[\#0d121f\],
-html.light .bg-\[\#090c13\] {
-  background-color: #f8fafc !important;
+html.theme-hematite .bg-\[\#111726\],
+html.theme-hematite .bg-\[\#0f172a\],
+html.theme-hematite .bg-slate-900 {
+  background-color: #12151f !important;
+  border-color: #2b2319 !important;
+  box-shadow: 0 4px 20px -4px rgba(245, 158, 11, 0.08), inset 0 0 15px -8px rgba(245, 158, 11, 0.05);
 }
 
-html.light .bg-\[\#111726\],
-html.light .bg-\[\#0f172a\],
-html.light .bg-slate-900 {
-  background-color: #ffffff !important;
+html.theme-hematite .border-\[\#1f293d\],
+html.theme-hematite .border-\[\#161c28\],
+html.theme-hematite .border-slate-800 {
+  border-color: #2b2319 !important;
 }
 
-html.light .border-\[\#1f293d\],
-html.light .border-\[\#161c28\],
-html.light .border-slate-800,
-html.light .border-slate-700 {
-  border-color: #e2e8f0 !important;
+html.theme-hematite h1,
+html.theme-hematite h2,
+html.theme-hematite h3,
+html.theme-hematite h4 {
+  color: #ffffff !important;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
 }
 
-html.light .text-slate-200,
-html.light .text-slate-300,
-html.light h1,
-html.light h2,
-html.light h3,
-html.light h4,
-html.light .text-white {
-  color: #1a1c20 !important;
+html.theme-hematite .text-cyan-400,
+html.theme-hematite .text-cyan-300 {
+  color: #fbbf24 !important; /* Golden Amber highlight instead of blue/cyan */
 }
 
-html.light .text-slate-400,
-html.light .text-slate-500 {
-  color: #64748b !important;
+html.theme-hematite .bg-cyan-500,
+html.theme-hematite .bg-cyan-400 {
+  background-color: #f59e0b !important; /* Molten Amber button background */
 }
 
-html.light input,
-html.light select,
-html.light textarea {
-  background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
+html.theme-hematite .border-cyan-500\/40,
+html.theme-hematite .border-cyan-500\/50,
+html.theme-hematite .border-cyan-500\/30 {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+html.theme-hematite .bg-cyan-950,
+html.theme-hematite .bg-cyan-950\/80,
+html.theme-hematite .bg-cyan-500\/20,
+html.theme-hematite .bg-cyan-500\/10 {
+  background-color: rgba(69, 38, 10, 0.7) !important;
 }
 
 /* Custom scrollbars */
@@ -91,35 +99,31 @@ html.light textarea {
 ::-webkit-scrollbar-track {
   background: #0d121f;
 }
-html.light ::-webkit-scrollbar-track {
-  background: #e2e8f0;
+html.theme-hematite ::-webkit-scrollbar-track {
+  background: #0c0e14;
 }
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
   border-radius: 3px;
 }
-html.light ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+html.theme-hematite ::-webkit-scrollbar-thumb {
+  background: #3b2c1d;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+html.theme-hematite ::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
 }
 
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Glowing cyber border effects */
-.glow-border-cyan {
-  box-shadow: 0 0 15px -3px rgba(0, 229, 255, 0.25), inset 0 0 15px -5px rgba(0, 229, 255, 0.15);
+/* Glowing ore & cyber border effects */
+.glow-border-cyan, .glow-border-amber {
+  box-shadow: 0 0 18px -2px rgba(245, 158, 11, 0.35), inset 0 0 15px -5px rgba(245, 158, 11, 0.15);
 }
 
 .glow-border-red {
-  box-shadow: 0 0 20px -2px rgba(239, 68, 68, 0.45), inset 0 0 15px -4px rgba(239, 68, 68, 0.25);
-}
-
-.glow-border-amber {
-  box-shadow: 0 0 15px -3px rgba(245, 158, 11, 0.35), inset 0 0 15px -5px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 22px -2px rgba(239, 68, 68, 0.5), inset 0 0 15px -4px rgba(239, 68, 68, 0.25);
 }
 
 /* Industrial grid background */
@@ -129,8 +133,8 @@ html.light ::-webkit-scrollbar-thumb {
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
-html.light .bg-grid-pattern {
+html.theme-hematite .bg-grid-pattern {
   background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgba(245, 158, 11, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(245, 158, 11, 0.04) 1px, transparent 1px);
 }
