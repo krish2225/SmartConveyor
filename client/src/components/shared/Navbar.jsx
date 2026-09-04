@@ -87,7 +87,7 @@ export default function Navbar({
 
             <div className="flex items-center gap-2 px-2.5 py-1 bg-[#111726] border border-emerald-500/30 rounded-lg text-xs font-mono text-emerald-400">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>LIVE FIRESTORE onSnapshot</span>
+              <span>LIVE FIREBASE IoT • MONGODB LOGS</span>
             </div>
           </div>
 

@@ -1,9 +1,10 @@
 /**
- * SmartConveyor - Authentication & Role-Based Access Control
+ * SmartConveyor - Authentication & Role-Based Access Control (MERN / MongoDB)
  * File: client/src/firebase/auth.js
  */
 
 import { USER_ROLES } from '../../../shared/constants.js';
+import { loginUserApi, getMeApi } from '../services/api.js';
 
 // Pre-configured role profiles for NMDC Bailadila Mining operations
 export const DEMO_USERS = {
@@ -54,40 +55,44 @@ export function subscribeToAuth(callback) {
   return () => authListeners.delete(callback);
 }
 
-export function loginWithCredentials(email, password, role = USER_ROLES.OPERATOR) {
-  let matched = Object.values(DEMO_USERS).find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (!matched) {
-    matched = {
-      uid: `usr-${Date.now()}`,
-      email,
-      displayName: email.split('@')[0].toUpperCase() + ' (Staff)',
-      role,
-      facilityId: 'nmdc-kirandul-cv101',
-      avatar: '👤'
-    };
-  }
-  currentUser = matched;
+export async function loginWithCredentials(email, password = 'password123', role = USER_ROLES.OPERATOR) {
   try {
-    localStorage.setItem('smartconveyor_user', JSON.stringify(currentUser));
-  } catch {}
+    // Attempt MongoDB authentication
+    const response = await loginUserApi(email, password, role);
+    currentUser = response.user;
+  } catch (err) {
+    console.warn('[Auth Notice] Backend offline or fallback mode, logging in locally:', err.message);
+    let matched = Object.values(DEMO_USERS).find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!matched) {
+      matched = {
+        uid: `usr-${Date.now()}`,
+        email,
+        displayName: email.split('@')[0].toUpperCase() + ' (Staff)',
+        role,
+        facilityId: 'nmdc-kirandul-cv101',
+        avatar: '👤'
+      };
+    }
+    currentUser = matched;
+    try {
+      localStorage.setItem('smartconveyor_user', JSON.stringify(currentUser));
+    } catch {}
+  }
+
   authListeners.forEach(fn => fn(currentUser));
-  return Promise.resolve(currentUser);
+  return currentUser;
 }
 
-export function loginAsRole(roleKey) {
+export async function loginAsRole(roleKey) {
   const profile = DEMO_USERS[roleKey] || DEMO_USERS.operator;
-  currentUser = profile;
-  try {
-    localStorage.setItem('smartconveyor_user', JSON.stringify(currentUser));
-  } catch {}
-  authListeners.forEach(fn => fn(currentUser));
-  return Promise.resolve(currentUser);
+  return loginWithCredentials(profile.email, 'password123', profile.role);
 }
 
 export function logoutUser() {
   currentUser = null;
   try {
     localStorage.removeItem('smartconveyor_user');
+    localStorage.removeItem('smartconveyor_token');
   } catch {}
   authListeners.forEach(fn => fn(currentUser));
   return Promise.resolve();

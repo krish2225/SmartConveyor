@@ -1,14 +1,14 @@
 # SmartConveyor Hardware-to-Cloud Integration Guide
 > **SIH Problem Statement 26008 (NMDC Iron Ore Mining)**  
-> **Architecture: Physical Sensors $\to$ ESP32 / Raspberry Pi Edge $\to$ Firebase Firestore $\to$ React Web App**
+> **Architecture: Physical Sensors $\to$ ESP32 / Raspberry Pi Edge $\to$ Firebase Live Telemetry $\to$ React Frontend $\longleftrightarrow$ Express + MongoDB Backend**
 
 ---
 
 ## 1. End-to-End System Pipeline
 
 ```mermaid
-flowchart LR
-    subgraph HardwareLayer ["Field Hardware Sensors"]
+flowchart TD
+    subgraph HardwareLayer ["Field Hardware Sensors (IoT)"]
         S1["MPU6050 / Piezo (Vibration)"]
         S2["Optical Encoder (Tachometer)"]
         S3["HX711 Load Cells (Ore Weight)"]
@@ -21,21 +21,24 @@ flowchart LR
         ESP["ESP32 / Raspberry Pi Gateway"]
     end
 
-    subgraph CloudLayer ["Firebase Cloud Backend"]
-        FS[("Cloud Firestore\ntelemetry/{facilityId}")]
-        CF["Cloud Functions\n(Reliability & Dump Filter)"]
-        ML["FastAPI Microservice\n(RUL & Anomaly)"]
+    subgraph FirebaseLayer ["Firebase Cloud (Live Transducer Data Only)"]
+        FS[("Firebase Firestore\ntelemetry/{facilityId}\n(Sub-second live sensor packet)")]
     end
 
-    subgraph WebLayer ["React + Vite Frontend"]
-        UI["Web Dashboard & 3D Digital Twin\n(Live onSnapshot Stream)"]
+    subgraph MERNBackend ["MERN Express + MongoDB Backend"]
+        API["Node.js + Express API (/api)"]
+        MDB[("MongoDB Database\n• System & Sensor Logs\n• Alerts & Incidents\n• User Auth & RBAC\n• Splice Joint Lifecycles\n• Compliance Reports\n• Safety Clearance Logs")]
+    end
+
+    subgraph WebLayer ["React + Three.js Frontend"]
+        UI["Web Dashboard, 3D Twin & MongoDB Logs\n(Live 20Hz Firebase onSnapshot + MongoDB REST)"]
     end
 
     S1 & S2 & S3 & S4 & S5 & S6 --> ESP
-    ESP -->|HTTPS REST PATCH| FS
-    FS -->|onWrite Trigger| CF
-    CF -->|Filter & Forward| ML
+    ESP -->|Live 20Hz PATCH| FS
     FS -->|Real-time onSnapshot| UI
+    UI <-->|REST API /api| API
+    API <--> MDB
 ```
 
 ---

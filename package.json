@@ -4,9 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm --prefix client run dev",
+    "server": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev",
     "client": "npm --prefix client run dev -- --host --port 3000",
+    "dev": "npm --prefix client run dev",
     "build": "npm --prefix client run build",
+    "seed": "npm --prefix server run seed",
     "ml": "cd ml/service && python -m uvicorn main:app --host 0.0.0.0 --port 8000",
     "simulate": "npm --prefix server/functions run simulate"
   }

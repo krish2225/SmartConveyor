@@ -56,26 +56,28 @@ smartconveyor/
 │   │   │   ├── digital-twin/                # ConveyorScene, BeltMesh, JointMarker, useThreeScene
 │   │   │   ├── vision/                      # LiveFeedPanel, AnalysisResultsPanel, RecentScansStrip
 │   │   │   ├── sensor-health/               # SensorHealthGrid, ReliabilityHistoryPanel
-│   │   │   ├── alerts/                      # AlertsTable
-│   │   │   ├── reports/                     # ReportsTable
+│   │   │   ├── alerts/                      # AlertsTable (Connected to MongoDB)
+│   │   │   ├── reports/                     # ReportsTable (Connected to MongoDB)
 │   │   │   └── shared/                      # Navbar, Sidebar, PlantSelector, StatusBadge, EmergencyStopBanner
-│   │   ├── pages/                           # 8 Screens: Login, Dashboard, DigitalTwin, Vision, SensorHealth, Alerts, Reports, Settings
-│   │   ├── firebase/                        # config.js, auth.js, firestore.js (onSnapshot listeners only)
-│   │   └── hooks/                           # useSensorData, useJointHealth, useSensorReliability, useEmergencyStatus
-├── server/                                  # BACKEND (Firebase Cloud Functions Orchestration)
-│   ├── functions/
-│   │   ├── src/
-│   │   │   ├── processing/                  # sensorReliability.js, dumpNoiseFilter.js, visionCaptureTrigger.js
-│   │   │   ├── mlClient/                    # mlServiceClient.js
-│   │   │   ├── triggers/                    # onSensorWrite, onVisionEvent, onCriticalAlert, onEmergencyStop
-│   │   │   └── simulators/                  # sensorSimulator.js
-│   ├── firestore.rules                      # Strict role-based security rules
-│   └── firebase.json
+│   │   ├── pages/                           # 9 Screens: Login, Dashboard, DigitalTwin, Vision, SensorHealth, Alerts, Logs (MongoDB), Reports, Settings
+│   │   ├── services/                        # api.js (Centralized MongoDB REST API Client)
+│   │   ├── firebase/                        # config.js, firestore.js (Dedicated strictly to 20Hz live sensor telemetry)
+│   │   └── hooks/                           # useSensorData (Firebase Live), useLogs (MongoDB), useJointHealth, useSensorReliability, useEmergencyStatus
+├── server/                                  # BACKEND (Node.js + Express + MongoDB Mongoose)
+│   ├── config/                              # db.js (MongoDB Connection Manager)
+│   ├── models/                              # User.js, Log.js, Alert.js, JointHealth.js, VisionEvent.js, ReliabilityLog.js, Report.js, EmergencyStatus.js, FacilityConfig.js
+│   ├── controllers/                         # authController, logsController, alertsController, jointsController, visionController, reliabilityController, reportsController, emergencyController, settingsController
+│   ├── routes/                              # authRoutes, logsRoutes, alertsRoutes, jointsRoutes, visionRoutes, reliabilityRoutes, reportsRoutes, emergencyRoutes, settingsRoutes
+│   ├── seed/                                # seedDatabase.js (Auto-populates MongoDB users, logs, alerts, reports, joints)
+│   └── server.js                            # Express Server on Port 5000
 ├── ml/                                      # ML MICROSERVICE & OFFLINE TRAINING
 │   ├── service/                             # FastAPI microservice on Cloud Run (POST /predict-rul, /detect-anomaly, /classify-image)
 │   │   ├── models/                          # rul_model.pkl, anomaly_model.pkl, vision_model.pkl
 │   │   └── main.py
 │   └── training/                            # Offline training scripts and synthetic data generators
+├── hardware/                                # PHYSICAL IoT HARDWARE FIRMWARE
+│   ├── esp32/                               # smartconveyor_esp32_firmware.ino (Streams 6 sensors to Firebase Firestore)
+│   └── raspberry_pi/                        # edge_gateway.py (Edge gateway publisher to Firebase)
 └── shared/
     └── constants.js                         # Shared sensor schemas, thresholds, facility IDs
 ```
@@ -84,15 +86,23 @@ smartconveyor/
 
 ## Quickstart Guide
 
-### 1. Install Client Dependencies & Run Frontend
+### 1. Install & Run MERN Backend Server (Express + MongoDB)
+```bash
+cd server
+npm install
+npm start
+```
+*Backend runs on [http://localhost:5000](http://localhost:5000) with auto-seeded MongoDB collections for logs, alerts, users, reports, and joints.*
+
+### 2. Install Client Dependencies & Run Frontend (React + Vite)
 ```bash
 cd client
 npm install
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+*Frontend opens on [http://localhost:3000](http://localhost:3000) with Vite `/api` proxy connected to MongoDB backend and live Firebase IoT telemetry.*
 
-### 2. Run ML Microservice (Optional / Cloud Run Standalone)
+### 3. Run ML Microservice (Optional / Cloud Run Standalone)
 ```bash
 cd ml/service
 pip install -r requirements.txt

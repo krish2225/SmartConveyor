@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getReportsApi, createReportApi } from '../../services/api.js';
 import {
   FileSpreadsheet,
   Download,
@@ -8,7 +9,8 @@ import {
   CheckCircle2,
   FileText,
   Clock,
-  Printer
+  Printer,
+  RefreshCw
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -22,38 +24,28 @@ export default function ReportsTable({
   const [reportTitle, setReportTitle] = useState('NMDC Shift Splice Integrity & RUL Audit');
   const [reportType, setReportType] = useState('SHIFT_AUDIT');
   const [isExporting, setIsExporting] = useState(false);
+  const [reportsList, setReportsList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const mockHistoricalReports = [
-    {
-      id: 'REP-2026-0814',
-      title: 'Weekly Joint Splice Degradation & RUL Forecast',
-      type: 'PREDICTIVE_RUL',
-      generatedBy: 'Dr. Ananya Verma (Lead Eng.)',
-      generatedAt: '2026-08-30 08:30',
-      totalTonnage: '428,500 Tons',
-      status: 'APPROVED'
-    },
-    {
-      id: 'REP-2026-0808',
-      title: 'Chute Dump Vibration & Ore Impact Analysis',
-      type: 'VIBRATION_AUDIT',
-      generatedBy: 'Rajesh Sharma (Operator)',
-      generatedAt: '2026-08-25 16:15',
-      totalTonnage: '394,200 Tons',
-      status: 'FILED'
-    },
-    {
-      id: 'REP-2026-0792',
-      title: 'Monthly Line-Scan Optical Defect Log',
-      type: 'VISION_SUMMARY',
-      generatedBy: 'Vikramaditya Roy (Admin)',
-      generatedAt: '2026-08-15 10:00',
-      totalTonnage: '1,840,000 Tons',
-      status: 'APPROVED'
+  const fetchReports = async () => {
+    setLoading(true);
+    try {
+      const res = await getReportsApi(facilityId);
+      if (res.reports) {
+        setReportsList(res.reports);
+      }
+    } catch (err) {
+      console.warn('Using fallback historical reports list:', err.message);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const handleExportCSV = () => {
+  useEffect(() => {
+    fetchReports();
+  }, [facilityId]);
+
+  const handleExportCSV = (specificReport) => {
     setIsExporting(true);
     const headers = ['Joint ID', 'Status', 'RUL (Days)', 'RUL (Hours)', 'Risk Score (%)', 'Thickness (mm)', 'Temp (C)'];
     const rows = joints.map(j => [
@@ -72,7 +64,7 @@ export default function ReportsTable({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `SmartConveyor_${facilityId}_Report.csv`);
+    link.setAttribute('download', `SmartConveyor_${facilityId}_${specificReport?.id || 'Report'}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -80,8 +72,26 @@ export default function ReportsTable({
     setTimeout(() => setIsExporting(false), 800);
   };
 
-  const handleGenerateReport = (e) => {
+  const handleGenerateReport = async (e) => {
     e.preventDefault();
+    try {
+      const res = await createReportApi({
+        facilityId,
+        title: reportTitle,
+        type: reportType,
+        generatedBy: 'Dr. Ananya Verma (Lead Eng.)',
+        totalTonnage: '428,500 Tons',
+        overallRiskScore,
+        snapshotData: { jointsCount: joints.length, riskScore: overallRiskScore }
+      });
+
+      if (res.report) {
+        setReportsList(prev => [res.report, ...prev]);
+      }
+    } catch (err) {
+      console.error('Failed to create report in MongoDB:', err);
+    }
+
     setShowGenerateModal(false);
     handleExportCSV();
   };
@@ -169,43 +179,57 @@ export default function ReportsTable({
             </thead>
 
             <tbody className="divide-y divide-[#1f293d]/80">
-              {mockHistoricalReports.map(rep => (
-                <tr key={rep.id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2 font-bold text-white text-xs">
-                      <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
-                      <span>{rep.title}</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-slate-400 pl-6">{rep.id}</span>
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-cyan-300">
-                    {rep.type}
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap text-slate-300 text-xs">
-                    {rep.generatedBy}
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-slate-400">
-                    {rep.generatedAt}
-                  </td>
-
-                  <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-orange-400">
-                    {rep.totalTonnage}
-                  </td>
-
-                  <td className="py-4 px-4 text-right whitespace-nowrap">
-                    <button
-                      onClick={handleExportCSV}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-[11px] font-mono inline-flex items-center gap-1"
-                    >
-                      <Download className="w-3 h-3" />
-                      Download
-                    </button>
+              {reportsList.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
+                    <CheckCircle2 className="w-6 h-6 text-slate-600 mx-auto mb-1" />
+                    No reports filed yet. Click "Generate Custom Report" to create a new compliance audit in MongoDB.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                reportsList.map(rep => (
+                  <tr key={rep.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2 font-bold text-white text-xs">
+                        <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
+                        <span>{rep.title}</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400 pl-6">{rep.id}</span>
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-cyan-300">
+                      {rep.type}
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap text-slate-300 text-xs">
+                      {rep.generatedBy}
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-slate-400">
+                      {new Date(rep.generatedAt).toLocaleString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </td>
+
+                    <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-orange-400">
+                      {rep.totalTonnage}
+                    </td>
+
+                    <td className="py-4 px-4 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => handleExportCSV(rep)}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-[11px] font-mono inline-flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" />
+                        Download
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

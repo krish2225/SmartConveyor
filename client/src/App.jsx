@@ -23,6 +23,7 @@ import DigitalTwin from './pages/DigitalTwin.jsx';
 import VisionMonitoring from './pages/VisionMonitoring.jsx';
 import SensorHealth from './pages/SensorHealth.jsx';
 import Alerts from './pages/Alerts.jsx';
+import Logs from './pages/Logs.jsx';
 import Reports from './pages/Reports.jsx';
 import Settings from './pages/Settings.jsx';
 
@@ -180,6 +181,15 @@ export default function App() {
                 <Alerts
                   facilityId={activeFacilityId}
                   alerts={alerts}
+                  currentUser={currentUser}
+                />
+              }
+            />
+            <Route
+              path="/logs"
+              element={
+                <Logs
+                  facilityId={activeFacilityId}
                   currentUser={currentUser}
                 />
               }

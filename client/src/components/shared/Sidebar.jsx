@@ -65,9 +65,17 @@ export default function Sidebar({
       description: 'Active & Acknowledged Events'
     },
     {
-      to: '/reports',
-      label: 'Reports & Logs',
+      to: '/logs',
+      label: 'MongoDB Logs',
       icon: FileText,
+      badge: 'MERN',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+      description: 'System & Sensor Telemetry Logs'
+    },
+    {
+      to: '/reports',
+      label: 'Compliance Reports',
+      icon: ShieldCheck,
       badge: null,
       description: 'Maintenance & Compliance Audit'
     },
@@ -147,7 +155,7 @@ export default function Sidebar({
           </nav>
         </div>
 
-        {/* Live Backend Connection Status Card */}
+        {/* Live MERN Backend Connection Status Card */}
         <div className={clsx(
           'p-3 m-3 rounded-xl text-xs space-y-2 border transition-all',
           backend.isOnline
@@ -162,7 +170,7 @@ export default function Sidebar({
                 <WifiOff className="w-3.5 h-3.5 text-red-400 animate-bounce" />
               )}
               <span className={backend.isOnline ? 'text-emerald-400' : 'text-red-400'}>
-                ML BACKEND {backend.isOnline ? 'ONLINE' : 'OFFLINE'}
+                MERN BACKEND {backend.isOnline ? 'ONLINE' : 'OFFLINE'}
               </span>
             </div>
             {backend.isOnline && (
@@ -174,14 +182,14 @@ export default function Sidebar({
 
           <div className="text-[10px] text-slate-300 leading-relaxed font-mono">
             {backend.isOnline ? (
-              <span>FastAPI active (port 8000). XGBoost RUL, Isolation Forest &amp; YOLOv8 connected.</span>
+              <span>Express API &amp; MongoDB active (port 5000). Live 20Hz Firebase sensor stream connected.</span>
             ) : (
-              <span className="text-red-300">FastAPI offline on port 8000. Run <code>python -m uvicorn main:app</code> to start backend.</span>
+              <span className="text-red-300">Express API offline on port 5000. Run <code>npm start</code> in <code>server/</code>.</span>
             )}
           </div>
 
           <div className="pt-1.5 border-t border-[#1f293d] flex items-center justify-between text-[10px] font-mono text-slate-400">
-            <span>Port: 8000</span>
+            <span>DB: {backend.dbConnected ? 'MongoDB (Active)' : 'Memory Fallback'}</span>
             <span className={backend.isOnline ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
               {backend.isOnline ? '100% Synced' : 'Disconnected'}
             </span>
