@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { connectDB, getDBStatus } from './config/db.js';
 import { seedDatabase } from './seed/seedDatabase.js';
+import { startHistoryRecorder } from './services/historyRecorder.js';
 
 // Route imports
 import authRoutes from './routes/authRoutes.js';
@@ -104,6 +105,7 @@ const server = app.listen(PORT, () => {
   connectDB().then((conn) => {
     if (conn) {
       seedDatabase();
+      startHistoryRecorder();
     }
   });
 });

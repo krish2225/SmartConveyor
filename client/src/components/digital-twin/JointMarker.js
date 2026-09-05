@@ -103,19 +103,24 @@ export function createJointMarkersGroup(joints = []) {
 }
 
 /**
- * Updates existing joint markers in-place when new Firestore telemetry arrives WITHOUT resetting position!
+ * Updates existing joint markers in-place when new telemetry or playback state arrives.
+ * Detects status transitions (e.g. Green -> Amber -> Red) and triggers an energetic flash animation!
  */
 export function updateJointMarkersData(jointMarkers = [], updatedJoints = []) {
   if (!jointMarkers || !updatedJoints) return;
 
   jointMarkers.forEach(marker => {
-    const updated = updatedJoints.find(j => j.jointId === marker.userData.jointId);
+    const updated = updatedJoints.find(j => (j.jointId || j.id) === marker.userData.jointId);
     if (!updated) return;
 
-    marker.userData.jointData = updated;
+    const prevStatus = marker.userData.jointData?.healthStatus || marker.userData.jointData?.status;
+    const currentStatus = updated.healthStatus || updated.status || 'OPTIMAL';
+    const statusChanged = prevStatus && prevStatus !== currentStatus;
 
-    const isCritical = updated.healthStatus === JOINT_STATUS.CRITICAL_DELAMINATION;
-    const isWarning = updated.healthStatus === JOINT_STATUS.ELEVATED_WEAR;
+    marker.userData.jointData = { ...marker.userData.jointData, ...updated, healthStatus: currentStatus };
+
+    const isCritical = currentStatus === JOINT_STATUS.CRITICAL_DELAMINATION || currentStatus === 'critical' || currentStatus === 'CRITICAL_DELAMINATION';
+    const isWarning = currentStatus === JOINT_STATUS.ELEVATED_WEAR || currentStatus === 'warning' || currentStatus === 'ELEVATED_WEAR';
 
     let markerColor = 0x10b981; // Green
     if (isCritical) markerColor = 0xef4444; // Red
@@ -126,7 +131,7 @@ export function updateJointMarkersData(jointMarkers = [], updatedJoints = []) {
     if (seam && seam.material) {
       seam.material.color.setHex(markerColor);
       seam.material.emissive.setHex(markerColor);
-      seam.material.emissiveIntensity = isCritical ? 0.9 : (isWarning ? 0.6 : 0.3);
+      seam.material.emissiveIntensity = statusChanged ? 2.2 : (isCritical ? 0.95 : (isWarning ? 0.6 : 0.3));
     }
 
     // Update pin material
@@ -134,13 +139,22 @@ export function updateJointMarkersData(jointMarkers = [], updatedJoints = []) {
     if (pin && pin.material) {
       pin.material.color.setHex(markerColor);
       pin.material.emissive.setHex(markerColor);
+      pin.material.emissiveIntensity = statusChanged ? 2.5 : 0.8;
+      if (statusChanged) {
+        pin.scale.set(1.4, 1.4, 1.4);
+        setTimeout(() => pin.scale.set(1.0, 1.0, 1.0), 350);
+      }
     }
 
-    // Update ring visibility
+    // Update ring visibility & pulse
     const ring = marker.getObjectByName('PulseRing');
     if (ring && ring.material) {
       ring.material.color.setHex(markerColor);
-      ring.material.opacity = isCritical || isWarning ? 0.8 : 0.0;
+      ring.material.opacity = isCritical || isWarning ? 0.85 : (statusChanged ? 0.9 : 0.0);
+      if (statusChanged) {
+        ring.scale.set(1.6, 1.6, 1.6);
+        setTimeout(() => ring.scale.set(1.0, 1.0, 1.0), 400);
+      }
     }
   });
 }

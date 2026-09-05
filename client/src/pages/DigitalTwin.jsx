@@ -3,6 +3,7 @@ import ConveyorScene from '../components/digital-twin/ConveyorScene.jsx';
 import { Boxes, Info, ShieldAlert, Cpu } from 'lucide-react';
 
 export default function DigitalTwin({
+  facilityId = 'nmdc-kirandul-cv101',
   joints = [],
   selectedJointId = 'Joint-05',
   onSelectJoint,
@@ -39,6 +40,7 @@ export default function DigitalTwin({
 
       {/* 3D Scene Viewport Component */}
       <ConveyorScene
+        facilityId={facilityId}
         joints={joints}
         selectedJointId={selectedJointId}
         onSelectJoint={onSelectJoint}

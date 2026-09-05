@@ -148,6 +148,25 @@ export async function updateJointHealthApi(jointId, updates, user, facilityId) {
   });
 }
 
+export async function getAllJointsHistoryApi(facilityId, from, to, limit = 1500) {
+  const query = new URLSearchParams();
+  if (facilityId) query.append('facilityId', facilityId);
+  if (from) query.append('from', from);
+  if (to) query.append('to', to);
+  if (limit) query.append('limit', limit);
+  const qs = query.toString();
+  return apiFetch(`/joints/history/all${qs ? `?${qs}` : ''}`);
+}
+
+export async function getJointHistoryApi(jointId, facilityId, from, to) {
+  const query = new URLSearchParams();
+  if (facilityId) query.append('facilityId', facilityId);
+  if (from) query.append('from', from);
+  if (to) query.append('to', to);
+  const qs = query.toString();
+  return apiFetch(`/joints/${jointId}/history${qs ? `?${qs}` : ''}`);
+}
+
 // --- MongoDB Vision Events APIs ---
 export async function getVisionEventsApi(facilityId, limit = 50) {
   return apiFetch(`/vision?facilityId=${facilityId || 'nmdc-kirandul-cv101'}&limit=${limit}`);

@@ -146,6 +146,7 @@ export default function App() {
               path="/digital-twin"
               element={
                 <DigitalTwin
+                  facilityId={activeFacilityId}
                   joints={joints}
                   selectedJointId={selectedJoint?.jointId || 'Joint-05'}
                   onSelectJoint={setSelectedJointId}
