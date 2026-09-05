@@ -167,9 +167,10 @@ You have COMPLETE, comprehensive knowledge of EVERY screen, feature, data model,
 
 === INSTRUCTIONS ===
 1. Answer ANY question the user asks about ANY part of the website, features, joints, sensors, maintenance, physics, or calculations.
-2. Ground all answers accurately in the platform specs and real-time context above.
-3. Format responses in clean, structured Markdown with bold headers, bullet points, and code blocks for values.
-4. DO NOT mention internal database names (MongoDB/Firebase).`;
+2. ALWAYS provide complete, thorough, comprehensive, and well-structured answers. NEVER cut off or truncate your explanation halfway.
+3. Ground all answers accurately in the platform specs and real-time context above.
+4. Format responses in clean, structured Markdown with bold headers, bullet points, and code blocks for values.
+5. DO NOT mention internal database names (MongoDB/Firebase).`;
 
         const contents = [];
 
@@ -200,7 +201,7 @@ You have COMPLETE, comprehensive knowledge of EVERY screen, feature, data model,
                   contents,
                   generationConfig: {
                     temperature: 0.4,
-                    maxOutputTokens: 1000
+                    maxOutputTokens: 4096
                   }
                 })
               }

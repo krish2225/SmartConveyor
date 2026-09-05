@@ -13,7 +13,11 @@ import {
   Activity,
   Radio,
   Zap,
-  Cpu
+  Cpu,
+  Maximize2,
+  Minimize2,
+  Code,
+  Table
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -28,12 +32,13 @@ export default function ChatWidget({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // Short vs Large Screen toggle
 
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       sender: 'ai',
-      text: `Hello ${currentUser?.displayName ? currentUser.displayName.split(' ')[0] : 'Engineer'}! 👷‍♂️ I am your **SmartConveyor Real-Time AI Copilot**.\n\nI am grounded directly with your live conveyor sensor telemetry and predictive health models. Ask me anything — from live vibration and thermal metrics to splice RUL, alarms, ISO 10816 standards, and engineering calculations!`,
+      text: `Hello ${currentUser?.displayName ? currentUser.displayName.split(' ')[0] : 'Engineer'}! 👷‍♂️ I am your **SmartConveyor Real-Time AI Copilot**.\n\nI am grounded directly with your live conveyor sensor telemetry, 3D Digital Twin, line-scan vision defect models, and operational database. Ask me anything — from real-time vibration and thermal metrics to splice RUL, alarms, ISO 10816 standards, and engineering calculations!`,
       timestamp: new Date().toISOString()
     }
   ]);
@@ -47,23 +52,33 @@ export default function ChatWidget({
   const starterPrompts = [
     {
       icon: '📡',
-      text: "What's the live vibration on Joint 5 right now?",
-      label: "Live Joint 5 Vibration"
+      text: "What's the live vibration and temperature on Joint 5 right now?",
+      label: "Live Joint 5 State"
     },
     {
       icon: '🚨',
-      text: "Explain the current critical alert and required actions",
+      text: "Explain the current critical alert and recommended action plan",
       label: "Critical Alert Analysis"
     },
     {
       icon: '📊',
-      text: "What's our fleet splice health and lowest RUL?",
+      text: "What's our plant fleet splice health and lowest RUL?",
       label: "Fleet Health & RUL"
+    },
+    {
+      icon: '🧊',
+      text: "Explain how the 3D Digital Twin and Historical Playback work",
+      label: "Digital Twin & Replay"
     },
     {
       icon: '🔬',
       text: "Explain ISO 10816-3 vibration severity limits for mining belt drives",
       label: "ISO 10816 Standards"
+    },
+    {
+      icon: '📷',
+      text: "How does the Vision Monitoring system classify belt surface defects?",
+      label: "Vision AI Defect Model"
     }
   ];
 
@@ -72,7 +87,7 @@ export default function ChatWidget({
     if (isOpen && !isMinimized) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen, isMinimized]);
+  }, [messages, isOpen, isMinimized, isExpanded]);
 
   // Focus input when opened
   useEffect(() => {
@@ -179,50 +194,155 @@ export default function ChatWidget({
     ]);
   };
 
-  // Helper to format clean markdown (bold, code blocks, bullet points, headers)
+  // Helper to format clean markdown (tables, code blocks, bold, headers, lists)
   const formatMarkdown = (content) => {
     if (!content) return null;
-    return content.split('\n').map((line, idx) => {
-      // Bullet points
-      if (line.trim().startsWith('• ') || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-        const bulletText = line.trim().replace(/^[-*•]\s+/, '');
+
+    // Check for fenced code blocks
+    const blocks = content.split(/(```[\s\S]*?```)/g);
+
+    return blocks.map((block, bIdx) => {
+      if (block.startsWith('```') && block.endsWith('```')) {
+        const lines = block.slice(3, -3).trim().split('\n');
+        const lang = lines[0].trim() || 'code';
+        const codeText = (lines.length > 1 ? lines.slice(1).join('\n') : lines[0]).trim();
+
         return (
-          <div key={idx} className="flex items-start gap-1.5 my-1 text-slate-200">
-            <span className="text-cyan-400 font-bold leading-tight">•</span>
-            <span className="flex-1">{renderFormattedInline(bulletText)}</span>
+          <div key={bIdx} className="my-2.5 rounded-xl bg-[#070a10] border border-[#1f293d] overflow-hidden shadow-inner font-mono text-[11px]">
+            <div className="bg-[#0e1320] px-3 py-1.5 border-b border-[#1f293d] flex items-center justify-between text-slate-400 text-[10px]">
+              <span className="flex items-center gap-1 font-bold uppercase text-cyan-400">
+                <Code className="w-3 h-3 text-cyan-400" />
+                {lang}
+              </span>
+              <button
+                onClick={() => handleCopy(`code-${bIdx}`, codeText)}
+                className="hover:text-cyan-300 text-slate-400 flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                {copiedId === `code-${bIdx}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedId === `code-${bIdx}` ? 'Copied' : 'Copy Code'}</span>
+              </button>
+            </div>
+            <pre className="p-3 overflow-x-auto text-cyan-200 leading-relaxed">
+              <code>{codeText}</code>
+            </pre>
           </div>
         );
       }
-      // Numbered items
-      if (/^\d+\.\s+/.test(line.trim())) {
-        const num = line.trim().match(/^\d+\./)[0];
-        const numText = line.trim().replace(/^\d+\.\s+/, '');
-        return (
-          <div key={idx} className="flex items-start gap-1.5 my-1 text-slate-200">
-            <span className="text-cyan-400 font-bold font-mono text-[11px]">{num}</span>
-            <span className="flex-1">{renderFormattedInline(numText)}</span>
-          </div>
+
+      // Check for Table formatting
+      const lines = block.split('\n');
+      const renderedLines = [];
+      let tableBuffer = [];
+      let inTable = false;
+
+      const flushTable = () => {
+        if (tableBuffer.length >= 2) {
+          const headerRow = tableBuffer[0].split('|').filter((_, i, arr) => i > 0 && i < arr.length - 1).map(c => c.trim());
+          const bodyRows = tableBuffer.slice(2).map(row => row.split('|').filter((_, i, arr) => i > 0 && i < arr.length - 1).map(c => c.trim()));
+
+          renderedLines.push(
+            <div key={`tbl-${renderedLines.length}`} className="my-2.5 overflow-x-auto rounded-xl border border-[#1f293d] bg-[#090d16]">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#111726] border-b border-[#1f293d] text-cyan-400 font-mono text-[11px]">
+                    {headerRow.map((h, hi) => (
+                      <th key={hi} className="px-3 py-2 font-bold">{renderFormattedInline(h)}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1f293d]/60 text-slate-300">
+                  {bodyRows.map((row, ri) => (
+                    <tr key={ri} className="hover:bg-[#111726]/50 transition-colors">
+                      {row.map((cell, ci) => (
+                        <td key={ci} className="px-3 py-1.5">{renderFormattedInline(cell)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+        tableBuffer = [];
+        inTable = false;
+      };
+
+      for (let lIdx = 0; lIdx < lines.length; lIdx++) {
+        const line = lines[lIdx];
+        const isTableLine = line.trim().startsWith('|') && line.trim().endsWith('|');
+
+        if (isTableLine) {
+          inTable = true;
+          tableBuffer.push(line.trim());
+          continue;
+        } else if (inTable) {
+          flushTable();
+        }
+
+        // Bullet points
+        if (line.trim().startsWith('• ') || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+          const bulletText = line.trim().replace(/^[-*•]\s+/, '');
+          renderedLines.push(
+            <div key={`${bIdx}-${lIdx}`} className="flex items-start gap-1.5 my-1 text-slate-200">
+              <span className="text-cyan-400 font-bold leading-tight">•</span>
+              <span className="flex-1">{renderFormattedInline(bulletText)}</span>
+            </div>
+          );
+          continue;
+        }
+
+        // Numbered items
+        if (/^\d+\.\s+/.test(line.trim())) {
+          const num = line.trim().match(/^\d+\./)[0];
+          const numText = line.trim().replace(/^\d+\.\s+/, '');
+          renderedLines.push(
+            <div key={`${bIdx}-${lIdx}`} className="flex items-start gap-1.5 my-1 text-slate-200">
+              <span className="text-cyan-400 font-bold font-mono text-[11px]">{num}</span>
+              <span className="flex-1">{renderFormattedInline(numText)}</span>
+            </div>
+          );
+          continue;
+        }
+
+        // Section Headers
+        if (line.startsWith('### ') || line.startsWith('## ') || line.startsWith('# ')) {
+          const heading = line.replace(/^#+\s*/, '');
+          renderedLines.push(
+            <div key={`${bIdx}-${lIdx}`} className="font-bold text-white text-xs mt-3 mb-1 tracking-tight flex items-center gap-1.5 border-b border-[#1f293d] pb-0.5">
+              {renderFormattedInline(heading)}
+            </div>
+          );
+          continue;
+        }
+
+        // Blockquotes
+        if (line.startsWith('> ')) {
+          const quoteText = line.slice(2);
+          renderedLines.push(
+            <div key={`${bIdx}-${lIdx}`} className="border-l-2 border-cyan-500 pl-3 my-1.5 text-cyan-200/90 italic text-[11px] bg-cyan-950/20 py-1 rounded-r-lg">
+              {renderFormattedInline(quoteText)}
+            </div>
+          );
+          continue;
+        }
+
+        // Empty line
+        if (!line.trim()) {
+          renderedLines.push(<div key={`${bIdx}-${lIdx}`} className="h-1.5" />);
+          continue;
+        }
+
+        // Standard line
+        renderedLines.push(
+          <p key={`${bIdx}-${lIdx}`} className="my-0.5 leading-relaxed">
+            {renderFormattedInline(line)}
+          </p>
         );
       }
-      // Section Headers
-      if (line.startsWith('### ') || line.startsWith('## ') || line.startsWith('# ')) {
-        const heading = line.replace(/^#+\s*/, '');
-        return (
-          <div key={idx} className="font-bold text-white text-xs mt-2.5 mb-1 tracking-tight flex items-center gap-1.5 border-b border-[#1f293d] pb-0.5">
-            {renderFormattedInline(heading)}
-          </div>
-        );
-      }
-      // Empty line
-      if (!line.trim()) {
-        return <div key={idx} className="h-1.5" />;
-      }
-      // Standard line
-      return (
-        <p key={idx} className="my-0.5 leading-relaxed">
-          {renderFormattedInline(line)}
-        </p>
-      );
+
+      if (inTable) flushTable();
+
+      return <React.Fragment key={bIdx}>{renderedLines}</React.Fragment>;
     });
   };
 
@@ -269,12 +389,16 @@ export default function ChatWidget({
         </button>
       )}
 
-      {/* 2. SLIDE-IN CHAT PANEL */}
+      {/* 2. SLIDE-IN / EXPANDABLE CHAT PANEL */}
       {isOpen && (
         <div
           className={clsx(
-            'fixed right-4 sm:right-6 bottom-4 sm:bottom-6 z-50 w-[calc(100vw-2rem)] sm:w-[460px] bg-[#0c101a]/95 backdrop-blur-2xl border border-cyan-500/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 animate-slide-in-right',
-            isMinimized ? 'h-14' : 'h-[85vh] sm:h-[640px] max-h-[740px]'
+            'fixed z-50 bg-[#0c101a]/95 backdrop-blur-2xl border border-cyan-500/40 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 animate-slide-in-right',
+            isMinimized
+              ? 'h-14 w-[calc(100vw-2rem)] sm:w-[420px] right-4 sm:right-6 bottom-4 sm:bottom-6'
+              : isExpanded
+                ? 'w-[calc(100vw-2rem)] sm:w-[860px] md:w-[980px] h-[92vh] sm:h-[840px] max-h-[92vh] right-2 sm:right-6 bottom-2 sm:bottom-6'
+                : 'w-[calc(100vw-2rem)] sm:w-[480px] h-[85vh] sm:h-[640px] max-h-[740px] right-4 sm:right-6 bottom-4 sm:bottom-6'
           )}
         >
           {/* Panel Header */}
@@ -291,7 +415,8 @@ export default function ChatWidget({
                     SmartConveyor AI Assistant
                   </h3>
                   <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 font-semibold">
-                    <Sparkles className="w-2.5 h-2.5 text-cyan-400" /> Real-Time Copilot
+                    <Sparkles className="w-2.5 h-2.5 text-cyan-400" />
+                    {isExpanded ? 'Expanded Workspace' : 'Real-Time Copilot'}
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
@@ -301,8 +426,18 @@ export default function ChatWidget({
               </div>
             </div>
 
-            {/* Header controls */}
+            {/* Header controls (Size toggle, Clear, Minimize, Close) */}
             <div className="flex items-center gap-1">
+              
+              {/* Screen Size Toggle (Short vs Large Workspace) */}
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-1.5 text-slate-400 hover:text-cyan-300 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                title={isExpanded ? "Collapse to Standard Window" : "Expand to Large Workspace"}
+              >
+                {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
+
               <button
                 onClick={handleClearChat}
                 className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
@@ -358,7 +493,8 @@ export default function ChatWidget({
 
                       {/* Message Bubble */}
                       <div className={clsx(
-                        'max-w-[85%] rounded-2xl p-3 shadow-lg relative',
+                        'rounded-2xl p-3.5 shadow-lg relative',
+                        isExpanded ? 'max-w-[90%]' : 'max-w-[85%]',
                         isUser
                           ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-tr-none'
                           : 'bg-[#111726] border border-[#1f293d] text-slate-200 rounded-tl-none'
@@ -432,7 +568,7 @@ export default function ChatWidget({
                         <span>Real-Time AI Copilot Reasoning...</span>
                       </div>
                       <p className="text-[10px] text-slate-400 leading-tight">
-                        Analyzing live 20Hz transducer telemetry, splice RUL curves, and plant knowledge.
+                        Formulating complete engineering analysis with 20Hz sensor metrics, splice RUL curves, and plant models.
                       </p>
                     </div>
                   </div>
@@ -443,12 +579,12 @@ export default function ChatWidget({
 
               {/* Starter Prompts Strip (Visible when few messages) */}
               {messages.length <= 2 && !isLoading && (
-                <div className="px-4 py-2 border-t border-[#1f293d] bg-[#090d14]/70">
+                <div className="px-4 py-2.5 border-t border-[#1f293d] bg-[#090d14]/70">
                   <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-cyan-400" />
-                    <span>Suggested Real-Time Queries:</span>
+                    <span>Suggested Engineering Queries:</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className={clsx('grid gap-1.5', isExpanded ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-2')}>
                     {starterPrompts.map((p, i) => (
                       <button
                         key={i}
@@ -466,7 +602,7 @@ export default function ChatWidget({
               )}
 
               {/* Input Box */}
-              <div className="p-3 bg-[#111726]/90 border-t border-[#1f293d] shrink-0">
+              <div className="p-3.5 bg-[#111726]/90 border-t border-[#1f293d] shrink-0">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -477,12 +613,12 @@ export default function ChatWidget({
                   <div className="flex-1 relative">
                     <textarea
                       ref={inputRef}
-                      rows={1}
+                      rows={isExpanded ? 2 : 1}
                       value={inputQuery}
                       onChange={(e) => setInputQuery(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Ask anything about live vibration, RUL, alerts, or engineering..."
-                      className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-cyan-500 focus:outline-none resize-none font-mono max-h-24"
+                      placeholder="Ask anything about conveyor diagnostics, 3D Digital Twin, vision, RUL, or engineering..."
+                      className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-cyan-500 focus:outline-none resize-none font-mono max-h-32"
                     />
                   </div>
 
@@ -490,9 +626,9 @@ export default function ChatWidget({
                     type="submit"
                     disabled={isLoading || !inputQuery.trim()}
                     className={clsx(
-                      'p-2.5 rounded-xl font-bold text-xs flex items-center justify-center transition-all shadow-md',
+                      'p-2.5 rounded-xl font-bold text-xs flex items-center justify-center transition-all shadow-md cursor-pointer',
                       inputQuery.trim() && !isLoading
-                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/25 cursor-pointer scale-100'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/25 scale-100'
                         : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
                     )}
                     aria-label="Send message"
