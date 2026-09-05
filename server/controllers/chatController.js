@@ -99,7 +99,7 @@ export async function handleChat(req, res) {
 
       // If GEMINI_API_KEY is available (from UI or .env), call Google Gemini
       if (effectiveApiKey && effectiveApiKey.length > 5) {
-        const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+        const models = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         
         const systemPrompt = `You are the intelligent AI Copilot for the NMDC SmartConveyor Industrial Monitoring System.
 You are equipped with real-time sensor telemetry and MongoDB database records from the plant, but you are ALSO a universal engineering and general assistant.
