@@ -225,6 +225,11 @@ export default function App() {
         <ChatWidget
           activeFacilityId={activeFacilityId}
           currentUser={currentUser}
+          telemetry={telemetry}
+          joints={joints}
+          alerts={alerts}
+          emergencyStatus={emergencyStatus}
+          reliabilityScores={reliabilityScores}
         />
       )}
 

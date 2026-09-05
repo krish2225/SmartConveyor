@@ -223,9 +223,8 @@ export async function updateFacilitySettingsApi(facilityId, thresholds, user) {
   });
 }
 
-// --- MongoDB AI Assistant Chat APIs ---
-export async function sendChatMessageApi(message, facilityId, user, context, apiKey, history) {
-  const customApiKey = apiKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('smartconveyor_gemini_api_key') : '') || '';
+// --- AI Assistant Chat APIs ---
+export async function sendChatMessageApi(message, facilityId, user, context, history) {
   return apiFetch('/chat', {
     method: 'POST',
     body: JSON.stringify({
@@ -233,7 +232,6 @@ export async function sendChatMessageApi(message, facilityId, user, context, api
       facilityId,
       user,
       context,
-      apiKey: customApiKey,
       history
     })
   });

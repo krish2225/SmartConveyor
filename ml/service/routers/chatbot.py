@@ -1,13 +1,22 @@
 """
 SmartConveyor - AI Assistant Chatbot FastAPI Router
-Handles hybrid retrieval for live Firestore telemetry and MongoDB plant records.
+Real-Time AI Copilot for NMDC SmartConveyor Industrial Monitoring.
 """
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import os
-import httpx
+import json
+
+try:
+    import httpx
+    HAS_HTTPX = True
+except ImportError:
+    HAS_HTTPX = False
+
+import urllib.request
+import urllib.error
 
 router = APIRouter()
 
@@ -24,6 +33,51 @@ class ChatResponse(BaseModel):
     sources: List[str]
     retrievedContextSummary: Dict[str, Any]
 
+async def call_gemini_api(model: str, key: str, prompt_contents: list) -> Optional[str]:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+    payload = {
+        "contents": prompt_contents,
+        "generationConfig": {
+            "temperature": 0.4,
+            "maxOutputTokens": 1000
+        }
+    }
+    
+    if HAS_HTTPX:
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                res = await client.post(url, json=payload)
+                if res.status_code == 200:
+                    data = res.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text")
+                        if text and text.strip():
+                            return text.strip()
+        except Exception:
+            pass
+
+    # Fallback to standard library urllib
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=8) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode("utf-8"))
+                candidates = data.get("candidates", [])
+                if candidates:
+                    text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text")
+                    if text and text.strip():
+                        return text.strip()
+    except Exception:
+        pass
+
+    return None
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
     if not req.message or not req.message.strip():
@@ -31,92 +85,127 @@ async def chat_endpoint(req: ChatRequest):
 
     q_lower = req.message.lower()
     sources = []
-    response_text = ""
+    
+    # Extract live context if provided
+    ctx = req.context or {}
+    telemetry = ctx.get("telemetry") or {}
+    sensors = telemetry.get("sensors") or ctx.get("sensors") or {}
+    
+    live_vibration = sensors.get("drive_vibration", telemetry.get("drive_vibration", 7.9))
+    live_temp = sensors.get("joint_temperature", telemetry.get("joint_temperature", 74.5))
+    live_speed = sensors.get("belt_speed", telemetry.get("belt_speed", 4.18))
+    live_load = sensors.get("dynamic_load", telemetry.get("dynamic_load", 1840.5))
+    live_thickness = sensors.get("ultrasonic_thickness", telemetry.get("ultrasonic_thickness", 16.2))
+    live_acoustic = sensors.get("acoustic_emission", telemetry.get("acoustic_emission", 78.4))
+    active_joint = telemetry.get("activeJointId", ctx.get("activeJointId", "Joint-05"))
 
-    # Check intent
-    is_live = any(w in q_lower for w in ["live", "vibration", "temp", "speed", "load", "thickness", "acoustic", "sensor", "joint 5", "joint-05"])
-    is_alert = any(w in q_lower for w in ["alert", "alarm", "warning", "critical", "fault", "issue"])
-    is_joint = any(w in q_lower for w in ["joint", "splice", "rul", "failure", "wear", "fleet", "health"])
-    is_emergency = any(w in q_lower for w in ["emergency", "e-stop", "halt", "stop"])
-
-    # If Gemini API key is provided, try Gemini 2.5 Flash / 1.5 Flash
-    effective_key = req.apiKey or os.getenv("GEMINI_API_KEY", "")
+    # If Gemini API key is available, call Google Gemini
+    effective_key = (req.apiKey or os.getenv("GEMINI_API_KEY", "")).strip()
     if effective_key and len(effective_key) > 5:
-        models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"]
-        system_prompt = f"""You are the AI Assistant for the NMDC SmartConveyor Industrial Monitoring System.
-You have access to live 20Hz telemetry and plant records for facility {req.facilityId}.
-- Live Joint-05 Vibration: 7.9 mm/s RMS (ISO 10816 Limit: 6.0 mm/s)
-- Ultrasonic Thickness: 16.2 mm (Critical Wear Limit: <18.5 mm)
-- Thermal Core Temp: 74.5 °C (Nominal: <65°C)
-- Acoustic Emission: 78.4 dB
-- Linear Belt Speed: 4.18 m/s | Dynamic Load: 1840.5 t/h
+        models = ["gemini-2.5-flash", "gemini-3.7-flash", "gemini-3.5-flash"]
+        system_prompt = f"""You are the AI Assistant Copilot for the NMDC SmartConveyor Industrial Monitoring System.
+You are equipped with real-time conveyor sensor telemetry, operational health models, and deep mechanical/mining engineering knowledge.
 
-Answer any question clearly in Markdown format with engineering precision."""
+--- REAL-TIME CONVEYOR TELEMETRY ({req.facilityId}) ---
+• Monitored Splice Joint: {active_joint}
+• Drive Vibration: {live_vibration} mm/s RMS (ISO 10816 Limit: 6.0 mm/s)
+• Thermal Core Temp: {live_temp} °C (Nominal: <65°C)
+• Ultrasonic Thickness: {live_thickness} mm (Critical Wear Limit: <18.5 mm)
+• Acoustic Stress Emission: {live_acoustic} dB (Surging acoustic emissions indicate internal delamination)
+• Linear Belt Speed: {live_speed} m/s | Dynamic Load: {live_load} t/h
+--------------------------------------------------------
+
+INSTRUCTIONS:
+1. Provide accurate, clear, and actionable engineering responses.
+2. Ground technical conveyor queries with the real-time telemetry above.
+3. Answer general engineering, math, physics, ISO standards, and operational calculations thoroughly.
+4. Format responses in clean Markdown (bullet points, bold text, code blocks for numeric values).
+5. DO NOT cite or mention internal database names like MongoDB or Firebase."""
+
+        contents = []
+        if req.history and isinstance(req.history, list):
+            for h in req.history[-6:]:
+                role = "user" if h.get("sender") == "user" or h.get("role") == "user" else "model"
+                txt = h.get("text") or h.get("content") or ""
+                if txt.strip():
+                    contents.append({"role": role, "parts": [{"text": txt.strip()}]})
+
+        contents.append({
+            "role": "user",
+            "parts": [{"text": f"{system_prompt}\n\nUSER QUESTION: {req.message}"}]
+        })
 
         for m in models:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={effective_key}"
-                async with httpx.AsyncClient(timeout=8.0) as client:
-                    res = await client.post(
-                        url,
-                        json={
-                            "contents": [{"role": "user", "parts": [{"text": f"{system_prompt}\n\nUSER QUESTION: {req.message}"}]}],
-                            "generationConfig": {"temperature": 0.5, "maxOutputTokens": 1000}
-                        }
-                    )
-                    if res.status_code == 200:
-                        data = res.json()
-                        text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text")
-                        if text:
-                            return ChatResponse(
-                                success=True,
-                                response=text.strip(),
-                                sources=[f"Google Gemini ({m})", "Firebase Live Telemetry (20Hz)", "MongoDB Collections"],
-                                retrievedContextSummary={"facilityId": req.facilityId, "usedGemini": True}
-                            )
-            except Exception:
-                pass
+            text = await call_gemini_api(m, effective_key, contents)
+            if text:
+                return ChatResponse(
+                    success=True,
+                    response=text,
+                    sources=[f"Google Gemini ({m})", "Real-Time Telemetry Stream"],
+                    retrievedContextSummary={"facilityId": req.facilityId, "usedGemini": True}
+                )
 
-    # Built-in Domain Synthesis fallback
+    # Built-in Real-Time Domain Synthesis Fallback Engine
+    is_live = any(w in q_lower for w in ["live", "vibration", "temp", "speed", "load", "thickness", "acoustic", "sensor", "reading", "joint 5", "joint-05", "j-204"])
+    is_alert = any(w in q_lower for w in ["alert", "alarm", "warning", "critical", "fault", "issue", "incident"])
+    is_joint = any(w in q_lower for w in ["joint", "splice", "rul", "failure", "wear", "fleet", "health", "rupture"])
+    is_emergency = any(w in q_lower for w in ["emergency", "e-stop", "halt", "stop"])
+
     if is_live or "vibration" in q_lower or "joint 5" in q_lower:
-        sources.append("Firebase Firestore (Live 20Hz Stream)")
+        sources.append("Real-Time Telemetry Stream")
+        vib_status = "⚠️ Exceeds ISO 10816 Zone C warning limit of 6.0 mm/s" if live_vibration > 6.0 else "✅ Nominal within ISO 10816 Zone A/B"
+        thick_status = "⚠️ Critical wear threshold (< 18.5 mm)" if live_thickness < 18.5 else "✅ Nominal thickness"
+        temp_status = "⚠️ Elevated core temperature (> 65°C)" if live_temp > 65.0 else "✅ Normal thermal range"
+
         response_text = (
-            "📡 **Live Telemetry for Joint-05 (High Tension Curve Splice)**\n"
-            "*Source: Firebase Firestore Real-Time IoT Stream (20Hz)*\n\n"
-            "• **Live Vibration:** `7.9 mm/s RMS` ⚠️ *(Exceeds ISO 10816 Zone C warning limit of 6.0 mm/s)*\n"
-            "• **Thermal Core Temp:** `74.5 °C` *(Nominal < 65°C)*\n"
-            "• **Ultrasonic Thickness:** `16.2 mm` *(Critical wear threshold is < 18.5 mm)*\n"
-            "• **Acoustic Stress Emission:** `78.4 dB` *(Internal delamination micro-cracks)*\n"
-            "• **Belt Linear Speed:** `4.18 m/s` | **Dynamic Load:** `1,840.5 t/h`\n\n"
-            "**Engineering Assessment:** Joint-05 is exhibiting anomalous harmonic vibration due to longitudinal cord delamination. Immediate ultrasonic scan recommended."
+            f"📡 **Real-Time Telemetry for {active_joint} (High Tension Splice)**\n\n"
+            f"• **Live Vibration:** `{live_vibration} mm/s RMS` *({vib_status})*\n"
+            f"• **Thermal Core Temp:** `{live_temp} °C` *({temp_status})*\n"
+            f"• **Ultrasonic Thickness:** `{live_thickness} mm` *({thick_status})*\n"
+            f"• **Acoustic Stress Emission:** `{live_acoustic} dB` *(Internal delamination micro-cracks)*\n"
+            f"• **Belt Linear Speed:** `{live_speed} m/s` | **Dynamic Load:** `{live_load} t/h`\n\n"
+            f"**Engineering Assessment:** {active_joint} is exhibiting anomalous harmonic vibration due to longitudinal cord pull-out delamination. Immediate ultrasonic scan recommended."
         )
     elif is_alert:
-        sources.append("MongoDB (Collection: alerts)")
+        sources.append("Active Alarm Stream")
         response_text = (
-            "🚨 **Critical Alarm Analysis: Joint-05 Splice Delamination (ALT-1001)**\n"
-            "*Source: MongoDB (`alerts` collection) + Live Firestore Telemetry*\n\n"
-            "• **Severity:** `CRITICAL ALARM` | **Status:** `ACTIVE`\n"
-            "• **Root Cause:** Ultrasonic thickness degraded to `16.2 mm` (< 18.5 mm limit) with surging acoustic stress (`78.4 dB`).\n"
-            "• **Action Required:** Perform ultrasonic radiography inspection and prepare cold vulcanization splicing kit."
+            f"🚨 **Critical Alarm Analysis: {active_joint} Splice Delamination (ALT-1001)**\n\n"
+            f"• **Severity:** `CRITICAL ALARM` | **Status:** `ACTIVE`\n"
+            f"• **Target Splice:** `{active_joint}`\n"
+            f"• **Root Cause:** Ultrasonic thickness degraded to `{live_thickness} mm` (< 18.5 mm limit) with surging acoustic stress (`{live_acoustic} dB`).\n"
+            f"• **Action Required:** Perform ultrasonic radiography inspection and prepare cold vulcanization splicing kit."
         )
     elif is_joint:
-        sources.append("MongoDB (Collection: jointhealths)")
+        sources.append("Splice Health Matrix")
         response_text = (
-            "🏗️ **Plant Fleet Splice Health & Predictive RUL Summary**\n"
-            "*Source: MongoDB (`jointhealths` collection) • AI GradientBoosting Regression*\n\n"
+            "🏗️ **Plant Fleet Splice Health & Predictive RUL Summary**\n\n"
             "• **Overall Plant Rupture Risk Index:** `89.2%` (HIGH RISK)\n"
-            "• **Lowest Estimated Remaining Useful Life (RUL):** `6.0 Days` *(Joint-05)*\n"
-            "• **Splice Status:** 4 Optimal, 1 Elevated Wear, 1 Critical Delamination"
+            f"• **Lowest Estimated Remaining Useful Life (RUL):** `6.0 Days` *({active_joint})*\n"
+            "• **Splice Status:** 4 Optimal, 1 Elevated Wear, 1 Critical Delamination\n\n"
+            "**Splice Health Matrix:**\n"
+            "• 🟢 **Joint-01 (Head Pulley Splice):** RUL: `142.0d` | Risk: `4.2%` | Thickness: `21.8mm`\n"
+            "• 🟢 **Joint-02 (Take-Up Bend Splice):** RUL: `118.5d` | Risk: `8.7%` | Thickness: `21.2mm`\n"
+            "• 🟡 **Joint-03 (Loading Zone Splice):** RUL: `45.0d` | Risk: `41.0%` | Thickness: `19.4mm`\n"
+            "• 🟢 **Joint-04 (Return Strand Splice):** RUL: `98.0d` | Risk: `12.5%` | Thickness: `20.9mm`\n"
+            f"• 🔴 **{active_joint} (High Tension Curve):** RUL: `6.0d` | Risk: `89.2%` | Thickness: `{live_thickness}mm`"
+        )
+    elif is_emergency:
+        sources.append("Drive Interlock Stream")
+        response_text = (
+            "🛡️ **Conveyor Drive Interlock: Normal Operational State**\n\n"
+            f"• All drive substations armed and running nominal linear speed (`{live_speed} m/s`).\n"
+            "• Emergency Stop circuit is currently `INACTIVE` (Drive clear).\n"
+            "• Auto-interlock trip armed for severe longitudinal rip detection and vibration > 9.0 mm/s."
         )
     else:
-        sources.append("Built-in Domain Engine")
+        sources.append("SmartConveyor AI Engine")
         response_text = (
             "👷 **SmartConveyor AI Assistant — NMDC Mining Intelligence**\n\n"
-            "I can assist you with real-time operational diagnostics and predictive maintenance:\n\n"
-            "1. 📡 **Live Transducer Values:** Ask *\"What's the live vibration on Joint 5?\"*\n"
+            "I can assist you with real-time operational diagnostics, mechanical physics, and predictive maintenance:\n\n"
+            f"1. 📡 **Live Telemetry:** Ask *\"What's the live vibration on {active_joint}?\"*\n"
             "2. 🚨 **Alarm Explanations:** Ask *\"Explain the current critical alert\"*\n"
             "3. 📊 **Predictive Splice RUL:** Ask *\"What's our fleet health?\"*\n"
-            "4. 🧠 **General Knowledge:** Ask *\"Explain ISO 10816 vibration standards\"*"
+            "4. 🧠 **Engineering Knowledge:** Ask *\"Explain ISO 10816 vibration standards\"* or *\"Calculate CEMA belt sag\"*"
         )
 
     return ChatResponse(

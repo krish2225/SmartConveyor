@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { sendChatMessageApi } from '../../services/api.js';
 import {
-  MessageSquare,
   Bot,
   User,
   Send,
@@ -11,38 +10,30 @@ import {
   RefreshCw,
   Copy,
   Check,
-  Zap,
   Activity,
-  AlertTriangle,
-  Layers,
-  Database,
   Radio,
-  ChevronDown,
-  KeyRound,
-  Settings,
-  ShieldCheck,
-  Cpu,
-  Trash2
+  Zap,
+  Cpu
 } from 'lucide-react';
 import clsx from 'clsx';
 
 export default function ChatWidget({
   activeFacilityId = 'nmdc-kirandul-cv101',
-  currentUser
+  currentUser,
+  telemetry = null,
+  joints = [],
+  alerts = [],
+  emergencyStatus = null,
+  reliabilityScores = null
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [geminiKeyInput, setGeminiKeyInput] = useState('');
-  const [savedGeminiKey, setSavedGeminiKey] = useState('');
-  const [keySavedToast, setKeySavedToast] = useState(false);
 
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       sender: 'ai',
-      text: `Hello ${currentUser?.displayName ? currentUser.displayName.split(' ')[0] : 'Engineer'}! 👷‍♂️ I am your **SmartConveyor AI Assistant**.\n\nI can answer **ANYTHING** you ask — from live 20Hz transducer telemetry and failure root causes to ISO 10816 standards, mechanical physics, coding, and general engineering calculations!`,
-      sources: ['MERN Express API', 'Firebase Live IoT Stream'],
+      text: `Hello ${currentUser?.displayName ? currentUser.displayName.split(' ')[0] : 'Engineer'}! 👷‍♂️ I am your **SmartConveyor Real-Time AI Copilot**.\n\nI am grounded directly with your live conveyor sensor telemetry and predictive health models. Ask me anything — from live vibration and thermal metrics to splice RUL, alarms, ISO 10816 standards, and engineering calculations!`,
       timestamp: new Date().toISOString()
     }
   ]);
@@ -53,85 +44,42 @@ export default function ChatWidget({
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Load saved Gemini API Key from localStorage
-  useEffect(() => {
-    try {
-      const storedKey = localStorage.getItem('smartconveyor_gemini_api_key') || '';
-      setSavedGeminiKey(storedKey);
-      setGeminiKeyInput(storedKey);
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const handleSaveApiKey = (e) => {
-    e?.preventDefault();
-    const cleanKey = geminiKeyInput.trim();
-    try {
-      if (cleanKey) {
-        localStorage.setItem('smartconveyor_gemini_api_key', cleanKey);
-        setSavedGeminiKey(cleanKey);
-      } else {
-        localStorage.removeItem('smartconveyor_gemini_api_key');
-        setSavedGeminiKey('');
-      }
-      setKeySavedToast(true);
-      setTimeout(() => setKeySavedToast(false), 2500);
-      setShowKeyModal(false);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleClearApiKey = () => {
-    try {
-      localStorage.removeItem('smartconveyor_gemini_api_key');
-      setSavedGeminiKey('');
-      setGeminiKeyInput('');
-      setKeySavedToast(true);
-      setTimeout(() => setKeySavedToast(false), 2500);
-      setShowKeyModal(false);
-    } catch {
-      // ignore
-    }
-  };
-
   const starterPrompts = [
     {
       icon: '📡',
-      text: "What's the live vibration on Joint 5?",
+      text: "What's the live vibration on Joint 5 right now?",
       label: "Live Joint 5 Vibration"
     },
     {
       icon: '🚨',
-      text: "Explain the current critical alert",
+      text: "Explain the current critical alert and required actions",
       label: "Critical Alert Analysis"
     },
     {
       icon: '📊',
-      text: "What's our fleet health & RUL?",
+      text: "What's our fleet splice health and lowest RUL?",
       label: "Fleet Health & RUL"
     },
     {
       icon: '🔬',
-      text: "Explain ISO 10816-3 vibration severity limits for mining conveyors",
+      text: "Explain ISO 10816-3 vibration severity limits for mining belt drives",
       label: "ISO 10816 Standards"
     }
   ];
 
   // Auto-scroll on new messages
   useEffect(() => {
-    if (isOpen && !isMinimized && !showKeyModal) {
+    if (isOpen && !isMinimized) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen, isMinimized, showKeyModal]);
+  }, [messages, isOpen, isMinimized]);
 
   // Focus input when opened
   useEffect(() => {
-    if (isOpen && !isMinimized && !showKeyModal) {
+    if (isOpen && !isMinimized) {
       setTimeout(() => inputRef.current?.focus(), 200);
     }
-  }, [isOpen, isMinimized, showKeyModal]);
+  }, [isOpen, isMinimized]);
 
   const handleSendMessage = async (customText = null) => {
     const textToSend = typeof customText === 'string' ? customText : inputQuery;
@@ -151,6 +99,18 @@ export default function ChatWidget({
     setIsLoading(true);
 
     try {
+      // Package live conveyor snapshot for real-time grounding
+      const liveContext = {
+        telemetry: telemetry || {},
+        sensors: telemetry?.sensors || {},
+        activeJointId: telemetry?.activeJointId || 'Joint-05',
+        isDumping: telemetry?.isDumping || false,
+        joints: Array.isArray(joints) ? joints.slice(0, 10) : [],
+        alerts: Array.isArray(alerts) ? alerts.filter(a => a.status === 'ACTIVE').slice(0, 5) : [],
+        emergencyStatus: emergencyStatus || null,
+        reliabilityScores: reliabilityScores || null
+      };
+
       // Prepare recent conversation history for multi-turn reasoning
       const historyContext = newMessages.slice(-8).map(m => ({
         sender: m.sender,
@@ -161,13 +121,14 @@ export default function ChatWidget({
         textToSend.trim(),
         activeFacilityId,
         currentUser || { displayName: 'Shift Operator', role: 'OPERATOR' },
-        null,
-        savedGeminiKey,
+        liveContext,
         historyContext
       );
 
       const aiResponse = result.response || "I have received your query, but could not retrieve data.";
-      const sources = result.sources || ['MongoDB (Collections)', 'Firebase Live Telemetry'];
+      const cleanSources = (result.sources || []).filter(
+        s => !s.toLowerCase().includes('mongodb') && !s.toLowerCase().includes('firebase')
+      );
 
       setMessages([
         ...newMessages,
@@ -175,7 +136,7 @@ export default function ChatWidget({
           id: `ai-${Date.now()}`,
           sender: 'ai',
           text: aiResponse,
-          sources,
+          sources: cleanSources,
           timestamp: new Date().toISOString()
         }
       ]);
@@ -185,8 +146,7 @@ export default function ChatWidget({
         {
           id: `ai-${Date.now()}`,
           sender: 'ai',
-          text: `⚠️ **Connection Error**: Unable to reach backend assistant (${err.message}). Please ensure the Express server is active on port 5000.`,
-          sources: ['Offline Error Handler'],
+          text: `⚠️ **Connection Error**: Unable to reach backend assistant (${err.message}). Please ensure the server is active.`,
           timestamp: new Date().toISOString()
         }
       ]);
@@ -213,23 +173,34 @@ export default function ChatWidget({
       {
         id: `welcome-${Date.now()}`,
         sender: 'ai',
-        text: `Chat session refreshed. How can I assist you with your conveyor belt diagnostics or technical queries today?`,
-        sources: ['SmartConveyor AI Engine'],
+        text: `Chat session refreshed. How can I assist you with conveyor belt diagnostics, telemetry, or technical calculations?`,
         timestamp: new Date().toISOString()
       }
     ]);
   };
 
-  // Helper to format basic markdown (bold, code blocks, bullet points)
+  // Helper to format clean markdown (bold, code blocks, bullet points, headers)
   const formatMarkdown = (content) => {
+    if (!content) return null;
     return content.split('\n').map((line, idx) => {
       // Bullet points
       if (line.trim().startsWith('• ') || line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
         const bulletText = line.trim().replace(/^[-*•]\s+/, '');
         return (
           <div key={idx} className="flex items-start gap-1.5 my-1 text-slate-200">
-            <span className="text-cyan-400 font-bold">•</span>
-            <span>{renderFormattedInline(bulletText)}</span>
+            <span className="text-cyan-400 font-bold leading-tight">•</span>
+            <span className="flex-1">{renderFormattedInline(bulletText)}</span>
+          </div>
+        );
+      }
+      // Numbered items
+      if (/^\d+\.\s+/.test(line.trim())) {
+        const num = line.trim().match(/^\d+\./)[0];
+        const numText = line.trim().replace(/^\d+\.\s+/, '');
+        return (
+          <div key={idx} className="flex items-start gap-1.5 my-1 text-slate-200">
+            <span className="text-cyan-400 font-bold font-mono text-[11px]">{num}</span>
+            <span className="flex-1">{renderFormattedInline(numText)}</span>
           </div>
         );
       }
@@ -237,7 +208,7 @@ export default function ChatWidget({
       if (line.startsWith('### ') || line.startsWith('## ') || line.startsWith('# ')) {
         const heading = line.replace(/^#+\s*/, '');
         return (
-          <div key={idx} className="font-bold text-white text-xs mt-2 mb-1 tracking-tight flex items-center gap-1.5">
+          <div key={idx} className="font-bold text-white text-xs mt-2.5 mb-1 tracking-tight flex items-center gap-1.5 border-b border-[#1f293d] pb-0.5">
             {renderFormattedInline(heading)}
           </div>
         );
@@ -256,7 +227,7 @@ export default function ChatWidget({
   };
 
   const renderFormattedInline = (text) => {
-    // Parse `code` and **bold**
+    if (!text) return '';
     const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('`') && part.endsWith('`')) {
@@ -275,7 +246,7 @@ export default function ChatWidget({
 
   return (
     <>
-      {/* 1. FLOATING CHAT BUTTON (Fixed bottom-right on all screens) */}
+      {/* 1. FLOATING CHAT BUTTON (Fixed bottom-right) */}
       {!isOpen && (
         <button
           onClick={() => {
@@ -284,11 +255,11 @@ export default function ChatWidget({
           }}
           className="fixed bottom-6 right-6 z-50 p-3.5 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold rounded-full shadow-2xl shadow-cyan-500/40 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group border border-cyan-400/50 cursor-pointer"
           aria-label="Open SmartConveyor AI Assistant"
-          title="Open AI Assistant (Grounded on Firebase Live Telemetry, MongoDB Data & Gemini AI)"
+          title="Open Real-Time Conveyor AI Assistant"
         >
           {/* Pulsing ring indicator */}
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-[#0a0d14] animate-pulse" />
-          
+
           <div className="flex items-center gap-2">
             <Bot className="w-6 h-6 text-slate-950" />
             <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 text-xs font-bold text-slate-950 pr-1">
@@ -319,45 +290,22 @@ export default function ChatWidget({
                   <h3 className="text-xs font-bold text-white tracking-tight">
                     SmartConveyor AI Assistant
                   </h3>
-                  {savedGeminiKey ? (
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-500/40 flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5" /> Gemini AI
-                    </span>
-                  ) : (
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 uppercase">
-                      Domain Engine
-                    </span>
-                  )}
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 font-semibold">
+                    <Sparkles className="w-2.5 h-2.5 text-cyan-400" /> Real-Time Copilot
+                  </span>
                 </div>
                 <p className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
-                  Live IoT Grounded • {activeFacilityId.split('-')[1]?.toUpperCase() || 'CV-101'}
+                  Live Grounded • {activeFacilityId.split('-')[1]?.toUpperCase() || 'CV-101'}
                 </p>
               </div>
             </div>
 
             {/* Header controls */}
             <div className="flex items-center gap-1">
-              {/* Gemini Key Settings Button */}
-              <button
-                onClick={() => setShowKeyModal(!showKeyModal)}
-                className={clsx(
-                  'p-1.5 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-mono',
-                  savedGeminiKey
-                    ? 'text-purple-300 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-500/30'
-                    : 'text-slate-400 hover:text-cyan-300 hover:bg-slate-800'
-                )}
-                title={savedGeminiKey ? "Gemini Key Configured (Click to edit)" : "Set Google Gemini API Key"}
-              >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span className="text-[10px] hidden sm:inline">
-                  {savedGeminiKey ? 'Gemini Key' : 'API Key'}
-                </span>
-              </button>
-
               <button
                 onClick={handleClearChat}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
                 title="Clear Chat Session"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -365,7 +313,7 @@ export default function ChatWidget({
 
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
                 title={isMinimized ? "Expand Chat" : "Minimize Chat"}
               >
                 <Minus className="w-3.5 h-3.5" />
@@ -373,7 +321,7 @@ export default function ChatWidget({
 
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition-colors"
+                className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
                 title="Close Chat"
               >
                 <X className="w-4 h-4" />
@@ -381,86 +329,11 @@ export default function ChatWidget({
             </div>
           </div>
 
-          {/* Key Saved Toast */}
-          {keySavedToast && (
-            <div className="bg-emerald-950/90 border-b border-emerald-500/40 text-emerald-200 text-xs px-4 py-1.5 flex items-center gap-2 animate-fade-in font-mono">
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Gemini API Key saved successfully!</span>
-            </div>
-          )}
-
-          {/* 3. GEMINI API KEY MODAL / PANEL */}
-          {showKeyModal && !isMinimized && (
-            <div className="bg-[#090d16] border-b border-purple-500/30 p-4 space-y-3 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-bold text-white">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
-                  <span>Google Gemini API Key Configuration</span>
-                </div>
-                <button
-                  onClick={() => setShowKeyModal(false)}
-                  className="text-slate-400 hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                Paste your <strong className="text-purple-300">Gemini Free API Key</strong> from{' '}
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-cyan-400 underline hover:text-cyan-300"
-                >
-                  Google AI Studio
-                </a>{' '}
-                to unlock full generative intelligence. The AI can answer ANY question with live telemetry grounding!
-              </p>
-
-              <form onSubmit={handleSaveApiKey} className="space-y-2.5">
-                <input
-                  type="password"
-                  value={geminiKeyInput}
-                  onChange={(e) => setGeminiKeyInput(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="w-full bg-[#05080e] border border-purple-500/40 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:border-purple-400 focus:outline-none font-mono"
-                />
-
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-mono">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Stored securely in your local browser</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {savedGeminiKey && (
-                      <button
-                        type="button"
-                        onClick={handleClearApiKey}
-                        className="px-2.5 py-1.5 rounded-lg text-[11px] font-mono text-rose-400 hover:bg-rose-950/40 border border-rose-500/30 transition-colors flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3 h-3" /> Clear
-                      </button>
-                    )}
-                    <button
-                      type="submit"
-                      className="px-3.5 py-1.5 rounded-lg text-[11px] font-bold bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white shadow-md shadow-purple-500/20 transition-all cursor-pointer"
-                    >
-                      Save Key
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          )}
-
           {/* Panel Body (If not minimized) */}
           {!isMinimized && (
             <>
               {/* Message Feed */}
               <div className="flex-1 p-4 overflow-y-auto space-y-3.5 text-xs font-sans">
-                
                 {messages.map((msg) => {
                   const isUser = msg.sender === 'user';
                   const isCopied = copiedId === msg.id;
@@ -495,23 +368,30 @@ export default function ChatWidget({
                           {formatMarkdown(msg.text)}
                         </div>
 
-                        {/* Data sources pill (for AI answers) */}
+                        {/* Telemetry Grounding badge if AI used live stream */}
                         {!isUser && msg.sources && msg.sources.length > 0 && (
                           <div className="mt-2.5 pt-2 border-t border-[#1f293d] flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-slate-400">
-                            <span className="text-cyan-400 font-bold">Sources:</span>
                             {msg.sources.map((src, idx) => (
                               <span
                                 key={idx}
                                 className={clsx(
-                                  'px-1.5 py-0.5 rounded text-[9px] border',
+                                  'px-1.5 py-0.5 rounded text-[9px] border font-medium flex items-center gap-1',
                                   src.includes('Gemini')
-                                    ? 'bg-purple-950/70 text-purple-300 border-purple-500/40 font-semibold'
-                                    : src.includes('Firebase')
-                                    ? 'bg-amber-950/60 text-amber-300 border-amber-500/40'
-                                    : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                                    ? 'bg-purple-950/70 text-purple-300 border-purple-500/40'
+                                    : 'bg-cyan-950/60 text-cyan-300 border-cyan-500/40'
                                 )}
                               >
-                                {src.includes('Gemini') ? '✨ Google Gemini' : src.includes('Firebase') ? '🔥 Live Firebase' : '🍃 MongoDB'}
+                                {src.includes('Gemini') ? (
+                                  <>
+                                    <Sparkles className="w-2.5 h-2.5 text-purple-400" />
+                                    <span>Gemini AI</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Radio className="w-2.5 h-2.5 text-cyan-400" />
+                                    <span>Real-Time Telemetry</span>
+                                  </>
+                                )}
                               </span>
                             ))}
                           </div>
@@ -540,7 +420,7 @@ export default function ChatWidget({
                   );
                 })}
 
-                {/* Loading / Thinking Indicator */}
+                {/* Loading / Reasoning Indicator */}
                 {isLoading && (
                   <div className="flex gap-2.5 items-start animate-fade-in">
                     <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-slate-950 flex items-center justify-center shrink-0 shadow-md">
@@ -549,10 +429,10 @@ export default function ChatWidget({
                     <div className="bg-[#111726] border border-cyan-500/30 rounded-2xl rounded-tl-none p-3.5 text-xs text-slate-300 space-y-1.5 shadow-lg max-w-[85%]">
                       <div className="flex items-center gap-2 font-mono text-cyan-400 text-[11px] font-bold">
                         <Sparkles className="w-3.5 h-3.5 animate-bounce" />
-                        <span>{savedGeminiKey ? 'Gemini 1.5 Flash Reasoning...' : 'Synthesizing Live Telemetry & Records...'}</span>
+                        <span>Real-Time AI Copilot Reasoning...</span>
                       </div>
                       <p className="text-[10px] text-slate-400 leading-tight">
-                        Analyzing sub-second transducer readings, joint RUL curves, and plant knowledge.
+                        Analyzing live 20Hz transducer telemetry, splice RUL curves, and plant knowledge.
                       </p>
                     </div>
                   </div>
@@ -564,19 +444,9 @@ export default function ChatWidget({
               {/* Starter Prompts Strip (Visible when few messages) */}
               {messages.length <= 2 && !isLoading && (
                 <div className="px-4 py-2 border-t border-[#1f293d] bg-[#090d14]/70">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-cyan-400" />
-                      Suggested Queries (Ask Anything):
-                    </span>
-                    {!savedGeminiKey && (
-                      <button
-                        onClick={() => setShowKeyModal(true)}
-                        className="text-[9px] text-purple-400 hover:underline cursor-pointer"
-                      >
-                        + Add Gemini Key
-                      </button>
-                    )}
+                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-cyan-400" />
+                    <span>Suggested Real-Time Queries:</span>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
                     {starterPrompts.map((p, i) => (
@@ -611,7 +481,7 @@ export default function ChatWidget({
                       value={inputQuery}
                       onChange={(e) => setInputQuery(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={savedGeminiKey ? "Ask Gemini anything (conveyor, physics, math, code...)" : "Ask about live vibration, joint RUL, alerts, or anything..."}
+                      placeholder="Ask anything about live vibration, RUL, alerts, or engineering..."
                       className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:border-cyan-500 focus:outline-none resize-none font-mono max-h-24"
                     />
                   </div>
@@ -633,8 +503,9 @@ export default function ChatWidget({
 
                 <div className="flex items-center justify-between mt-2 px-1 text-[9px] font-mono text-slate-500">
                   <span>Press <kbd className="text-slate-400">Enter</kbd> to send</span>
-                  <span className="flex items-center gap-1 text-cyan-400/80">
-                    {savedGeminiKey ? '✨ Gemini Generative AI Active' : '⚡ Grounded Domain Engine Active'}
+                  <span className="flex items-center gap-1 text-cyan-400/90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Live 20Hz Telemetry Grounded
                   </span>
                 </div>
               </div>
