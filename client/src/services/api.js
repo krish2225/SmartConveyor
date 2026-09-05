@@ -223,7 +223,28 @@ export async function updateFacilitySettingsApi(facilityId, thresholds, user) {
   });
 }
 
+// --- MongoDB AI Assistant Chat APIs ---
+export async function sendChatMessageApi(message, facilityId, user, context, apiKey, history) {
+  const customApiKey = apiKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('smartconveyor_gemini_api_key') : '') || '';
+  return apiFetch('/chat', {
+    method: 'POST',
+    body: JSON.stringify({
+      message,
+      facilityId,
+      user,
+      context,
+      apiKey: customApiKey,
+      history
+    })
+  });
+}
+
+export async function getChatHistoryApi(facilityId) {
+  return apiFetch(`/chat/history${facilityId ? `?facilityId=${facilityId}` : ''}`);
+}
+
 // --- Health Check ---
 export async function checkServerHealthApi() {
   return apiFetch('/health');
 }
+

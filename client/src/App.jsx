@@ -15,6 +15,7 @@ import { useEmergencyStatus } from './hooks/useEmergencyStatus.js';
 import Navbar from './components/shared/Navbar.jsx';
 import Sidebar from './components/shared/Sidebar.jsx';
 import EmergencyStopBanner from './components/shared/EmergencyStopBanner.jsx';
+import ChatWidget from './components/chat/ChatWidget.jsx';
 
 // Pages
 import Login from './pages/Login.jsx';
@@ -218,6 +219,14 @@ export default function App() {
           </Routes>
         </main>
       </div>
+
+      {/* Floating AI Assistant Chat Widget (Available on all screens) */}
+      {!isLoginPage && (
+        <ChatWidget
+          activeFacilityId={activeFacilityId}
+          currentUser={currentUser}
+        />
+      )}
 
     </div>
   );

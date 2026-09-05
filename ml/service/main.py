@@ -6,7 +6,7 @@ Exposes FastAPI REST API on Cloud Run for RUL prediction, anomaly detection, and
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import predictive, anomaly, vision
+from routers import predictive, anomaly, vision, chatbot
 
 app = FastAPI(
     title="SmartConveyor ML Microservice",
@@ -27,6 +27,7 @@ app.add_middleware(
 app.include_router(predictive.router, tags=["Predictive Maintenance (RUL)"])
 app.include_router(anomaly.router, tags=["Edge Anomaly Detection"])
 app.include_router(vision.router, tags=["Computer Vision Line-Scan"])
+app.include_router(chatbot.router, tags=["AI Assistant Chatbot"])
 
 @app.get("/")
 @app.get("/health")

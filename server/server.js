@@ -15,6 +15,7 @@ import reliabilityRoutes from './routes/reliabilityRoutes.js';
 import reportsRoutes from './routes/reportsRoutes.js';
 import emergencyRoutes from './routes/emergencyRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use('/api/reliability', reliabilityRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
