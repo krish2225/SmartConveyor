@@ -78,17 +78,34 @@ export default function App() {
     navigate('/digital-twin');
   };
 
+  const handleAcknowledgeAlert = async (alertId, remark = '') => {
+    if (!alertId) return;
+    // Optimistic UI state update immediately
+    setAlerts(prev => prev.map(a => 
+      (a.id === alertId || a._id === alertId || a.incidentId === alertId)
+        ? { ...a, status: 'ACKNOWLEDGED', acknowledged: true, acknowledgedBy: currentUser?.displayName || 'Operator', acknowledgedAt: new Date().toISOString() }
+        : a
+    ));
+
+    try {
+      await acknowledgeAlertDoc(activeFacilityId, alertId, currentUser);
+    } catch (err) {
+      console.warn('[App] Alert ACK synced with local fallback:', err.message);
+    }
+  };
+
   const activeAlertCount = alerts.filter(a => a.status === 'ACTIVE').length;
   const isLoginPage = location.pathname === '/login';
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased">
       
       {/* Global Persistent Full-Width Emergency Stop Banner */}
       {!isLoginPage && (
         <EmergencyStopBanner
           emergencyStatus={emergencyStatus}
           currentUser={currentUser}
+          facilityId={activeFacilityId}
         />
       )}
 
@@ -116,7 +133,7 @@ export default function App() {
         )}
 
         {/* Main Content Area */}
-        <main className={isLoginPage ? 'w-full' : 'flex-1 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden'}>
+        <main className={isLoginPage ? 'w-full' : 'flex-1 p-3 md:p-5 lg:p-6 max-w-[1720px] mx-auto w-full overflow-x-hidden'}>
           <Routes>
             <Route
               path="/login"
@@ -137,8 +154,10 @@ export default function App() {
                   healthyCount={healthyCount}
                   alerts={alerts}
                   reliabilityScores={reliabilityScores}
+                  fleetAverageScore={fleetAverageScore}
                   currentUser={currentUser}
                   onInvestigateJoint={handleInvestigateJoint}
+                  onAcknowledgeAlert={handleAcknowledgeAlert}
                 />
               }
             />
@@ -178,12 +197,17 @@ export default function App() {
               }
             />
             <Route
+              path="/sensors"
+              element={<Navigate to="/sensor-health" replace />}
+            />
+            <Route
               path="/alerts"
               element={
                 <Alerts
                   facilityId={activeFacilityId}
                   alerts={alerts}
                   currentUser={currentUser}
+                  onAcknowledgeAlert={handleAcknowledgeAlert}
                 />
               }
             />

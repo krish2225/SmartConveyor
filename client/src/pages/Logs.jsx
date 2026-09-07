@@ -2,25 +2,47 @@ import React, { useState } from 'react';
 import { useLogs } from '../hooks/useLogs.js';
 import StatusBadge from '../components/shared/StatusBadge.jsx';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table.jsx';
+import { Card } from '../components/ui/card.jsx';
+import { Badge } from '../components/ui/badge.jsx';
+import { Button } from '../components/ui/button.jsx';
+import { Input } from '../components/ui/input.jsx';
+import { Label } from '../components/ui/label.jsx';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select.jsx';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog.jsx';
+import {
   Terminal,
   Search,
-  Filter,
   RefreshCw,
   Download,
   Plus,
-  AlertTriangle,
-  AlertOctagon,
-  Info,
-  ShieldCheck,
   CheckCircle2,
   Database,
-  Cpu,
-  Layers,
   Copy,
   Check,
-  X
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
-import clsx from 'clsx';
+import { cn } from '../lib/utils.js';
 
 export default function Logs({
   facilityId = 'nmdc-kirandul-cv101',
@@ -114,433 +136,446 @@ export default function Logs({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl text-slate-950 shadow-md">
+          <div className="p-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded text-emerald-400 shadow-sm">
             <Database className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
               MongoDB System &amp; Telemetry Logs
-              <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-500/40 rounded-full">
+              <Badge variant="nominal" size="sm" className="font-mono">
                 Live MERN Store
-              </span>
+              </Badge>
             </h1>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-muted-foreground font-mono">
               Collection: <span className="text-emerald-400 font-bold">logs</span> • High-Volume Audit Trail, Sensor Anomaly Events &amp; Plant Clearances
             </p>
           </div>
         </div>
 
-        {/* Quick action buttons */}
+        {/* Action buttons */}
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="icon-sm"
             onClick={() => refetch()}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-colors shadow-sm"
             title="Refresh MongoDB Logs"
           >
-            <RefreshCw className={clsx('w-4 h-4', loading && 'animate-spin')} />
-          </button>
+            <RefreshCw className={cn('w-3.5 h-3.5', loading && 'animate-spin')} />
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportCSV}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+            className="font-mono text-xs gap-1.5"
           >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <Download className="w-3.5 h-3.5 text-primary" />
             Export CSV
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="nominal"
+            size="sm"
             onClick={() => setShowCreateModal(true)}
-            className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
+            className="font-mono text-xs gap-1.5 font-bold"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             Insert Diagnostic Log
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d]">
-          <span className="text-[11px] font-mono text-slate-400 uppercase">Total MongoDB Logs</span>
-          <div className="text-2xl font-bold font-mono text-white mt-1">
+        <Card className="p-3.5 bg-surface border-border">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Total MongoDB Logs</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-foreground mt-1 tabular-nums">
             {stats.total.toLocaleString()}
           </div>
           <span className="text-[10px] text-emerald-400 font-mono">Real-time Stream</span>
-        </div>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-red-500/30">
-          <span className="text-[11px] font-mono text-red-300 uppercase">Critical Events</span>
-          <div className="text-2xl font-bold font-mono text-red-400 mt-1">
+        <Card className="p-3.5 bg-surface border-red-500/30">
+          <span className="text-[10px] font-mono text-red-300 uppercase font-bold">Critical Events</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-red-400 mt-1 tabular-nums">
             {stats.levels.CRITICAL || 0}
           </div>
-          <span className="text-[10px] text-red-500/80 font-mono">High Urgency Alerts</span>
-        </div>
+          <span className="text-[10px] text-red-400/80 font-mono">High Urgency Alerts</span>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-amber-500/30">
-          <span className="text-[11px] font-mono text-amber-300 uppercase">Warnings &amp; Wear</span>
-          <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
+        <Card className="p-3.5 bg-surface border-amber-500/30">
+          <span className="text-[10px] font-mono text-amber-300 uppercase font-bold">Warnings &amp; Wear</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-amber-400 mt-1 tabular-nums">
             {stats.levels.WARN || 0}
           </div>
-          <span className="text-[10px] text-amber-500/80 font-mono">Threshold Drift</span>
-        </div>
+          <span className="text-[10px] text-amber-400/80 font-mono">Threshold Drift</span>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d]">
-          <span className="text-[11px] font-mono text-cyan-300 uppercase">Audit &amp; Clearances</span>
-          <div className="text-2xl font-bold font-mono text-cyan-400 mt-1">
+        <Card className="p-3.5 bg-surface border-border">
+          <span className="text-[10px] font-mono text-primary uppercase font-bold">Audit &amp; Clearances</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-primary mt-1 tabular-nums">
             {stats.categories.AUDIT || 0}
           </div>
-          <span className="text-[10px] text-slate-400 font-mono">Safety Compliance</span>
-        </div>
+          <span className="text-[10px] text-muted-foreground font-mono">Safety Compliance</span>
+        </Card>
 
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-[#111726] border border-[#1f293d] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+      <Card className="p-3 bg-surface border-border flex flex-wrap items-center justify-between gap-3">
         
         {/* Search */}
         <div className="relative flex-1 min-w-[220px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
             type="text"
             placeholder="Search MongoDB logs by keyword, source, user, ID..."
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
-            className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+            className="pl-9 h-8 text-xs font-mono"
           />
         </div>
 
         {/* Level Filter */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-mono text-slate-400">Level:</span>
-          <select
+          <span className="text-xs font-mono text-muted-foreground">Level:</span>
+          <Select
             value={filters.level}
-            onChange={(e) => setFilters({ ...filters, level: e.target.value, page: 1 })}
-            className="bg-[#0a0d14] border border-[#1f293d] rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none cursor-pointer"
+            onValueChange={(val) => setFilters({ ...filters, level: val, page: 1 })}
           >
-            <option value="ALL">All Levels</option>
-            <option value="INFO">INFO</option>
-            <option value="WARN">WARN</option>
-            <option value="ERROR">ERROR</option>
-            <option value="CRITICAL">CRITICAL</option>
-          </select>
+            <SelectTrigger className="w-[120px] h-8 text-xs font-mono">
+              <SelectValue placeholder="Level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Levels</SelectItem>
+              <SelectItem value="INFO">INFO</SelectItem>
+              <SelectItem value="WARN">WARN</SelectItem>
+              <SelectItem value="ERROR">ERROR</SelectItem>
+              <SelectItem value="CRITICAL">CRITICAL</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Category Filter */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-mono text-slate-400">Category:</span>
-          <select
+          <span className="text-xs font-mono text-muted-foreground">Category:</span>
+          <Select
             value={filters.category}
-            onChange={(e) => setFilters({ ...filters, category: e.target.value, page: 1 })}
-            className="bg-[#0a0d14] border border-[#1f293d] rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none cursor-pointer"
+            onValueChange={(val) => setFilters({ ...filters, category: val, page: 1 })}
           >
-            <option value="ALL">All Categories</option>
-            <option value="SYSTEM">SYSTEM</option>
-            <option value="SENSOR">SENSOR</option>
-            <option value="ANOMALY">ANOMALY</option>
-            <option value="VISION">VISION</option>
-            <option value="ALERT">ALERT</option>
-            <option value="EMERGENCY">EMERGENCY</option>
-            <option value="AUDIT">AUDIT</option>
-            <option value="MAINTENANCE">MAINTENANCE</option>
-          </select>
+            <SelectTrigger className="w-[140px] h-8 text-xs font-mono">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Categories</SelectItem>
+              <SelectItem value="SYSTEM">SYSTEM</SelectItem>
+              <SelectItem value="SENSOR">SENSOR</SelectItem>
+              <SelectItem value="ANOMALY">ANOMALY</SelectItem>
+              <SelectItem value="VISION">VISION</SelectItem>
+              <SelectItem value="ALERT">ALERT</SelectItem>
+              <SelectItem value="EMERGENCY">EMERGENCY</SelectItem>
+              <SelectItem value="AUDIT">AUDIT</SelectItem>
+              <SelectItem value="MAINTENANCE">MAINTENANCE</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Joint Filter */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-mono text-slate-400">Joint:</span>
-          <select
+          <span className="text-xs font-mono text-muted-foreground">Joint:</span>
+          <Select
             value={filters.jointId}
-            onChange={(e) => setFilters({ ...filters, jointId: e.target.value, page: 1 })}
-            className="bg-[#0a0d14] border border-[#1f293d] rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-emerald-500 focus:outline-none cursor-pointer"
+            onValueChange={(val) => setFilters({ ...filters, jointId: val, page: 1 })}
           >
-            <option value="ALL">All Joints</option>
-            <option value="Joint-01">Joint-01</option>
-            <option value="Joint-02">Joint-02</option>
-            <option value="Joint-03">Joint-03</option>
-            <option value="Joint-04">Joint-04</option>
-            <option value="Joint-05">Joint-05</option>
-            <option value="Joint-06">Joint-06</option>
-          </select>
+            <SelectTrigger className="w-[120px] h-8 text-xs font-mono">
+              <SelectValue placeholder="Joint" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Joints</SelectItem>
+              <SelectItem value="Joint-01">Joint-01</SelectItem>
+              <SelectItem value="Joint-02">Joint-02</SelectItem>
+              <SelectItem value="Joint-03">Joint-03</SelectItem>
+              <SelectItem value="Joint-04">Joint-04</SelectItem>
+              <SelectItem value="Joint-05">Joint-05</SelectItem>
+              <SelectItem value="Joint-06">Joint-06</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-      </div>
+      </Card>
 
       {/* Logs Table */}
-      <div className="bg-[#111726] border border-[#1f293d] rounded-2xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#0c101a] border-b border-[#1f293d] text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-              <tr>
-                <th className="py-3.5 px-4">Level</th>
-                <th className="py-3.5 px-4">Timestamp</th>
-                <th className="py-3.5 px-4">Category / Source</th>
-                <th className="py-3.5 px-4">Log Message</th>
-                <th className="py-3.5 px-4">Target / User</th>
-                <th className="py-3.5 px-4 text-right">Details</th>
-              </tr>
-            </thead>
+      <Card className="bg-surface border-border overflow-hidden shadow-xl">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-surface-sunken hover:bg-surface-sunken">
+              <TableHead className="w-[100px]">Level</TableHead>
+              <TableHead className="w-[150px]">Timestamp</TableHead>
+              <TableHead className="w-[160px]">Category / Source</TableHead>
+              <TableHead>Log Message</TableHead>
+              <TableHead className="w-[140px]">Target / User</TableHead>
+              <TableHead className="w-[90px] text-right">Details</TableHead>
+            </TableRow>
+          </TableHeader>
 
-            <tbody className="divide-y divide-[#1f293d]/80">
-              {logs.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                    <CheckCircle2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                    No log records match the selected filter criteria in MongoDB.
-                  </td>
-                </tr>
-              ) : (
-                logs.map(log => {
-                  const isCritical = log.level === 'CRITICAL';
-                  const isError = log.level === 'ERROR';
-                  const isWarn = log.level === 'WARN';
+          <TableBody>
+            {logs.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground text-xs">
+                  <CheckCircle2 className="w-7 h-7 text-muted-foreground/60 mx-auto mb-2" />
+                  No log records match the selected filter criteria in MongoDB.
+                </TableCell>
+              </TableRow>
+            ) : (
+              logs.map(log => {
+                const isCritical = log.level === 'CRITICAL';
+                const isError = log.level === 'ERROR';
+                const isWarn = log.level === 'WARN';
 
-                  return (
-                    <tr
-                      key={log._id || log.logId}
-                      onClick={() => setSelectedLog(log)}
-                      className={clsx(
-                        'hover:bg-slate-800/50 transition-colors cursor-pointer',
-                        isCritical ? 'bg-red-950/20' : isError ? 'bg-orange-950/15' : isWarn ? 'bg-amber-950/10' : ''
+                return (
+                  <TableRow
+                    key={log._id || log.logId}
+                    onClick={() => setSelectedLog(log)}
+                    className={cn(
+                      'cursor-pointer transition-colors',
+                      isCritical ? 'bg-red-950/20 border-l-2 border-l-red-500' : isError ? 'bg-orange-950/15' : isWarn ? 'bg-amber-950/10' : ''
+                    )}
+                  >
+                    {/* Level Badge */}
+                    <TableCell className="whitespace-nowrap">
+                      <Badge
+                        variant={isCritical ? 'critical' : (isError || isWarn ? 'warning' : 'cyan')}
+                        size="sm"
+                        className="font-mono"
+                      >
+                        {log.level}
+                      </Badge>
+                    </TableCell>
+
+                    {/* Timestamp */}
+                    <TableCell className="whitespace-nowrap font-mono text-[11px] text-muted-foreground tabular-nums">
+                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                      <span className="block text-[10px] text-muted-foreground/70">
+                        {new Date(log.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </span>
+                    </TableCell>
+
+                    {/* Category & Source */}
+                    <TableCell className="whitespace-nowrap font-mono">
+                      <div className="text-primary font-semibold text-[11px]">
+                        {log.category}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+                        {log.source || 'Node Backend'}
+                      </div>
+                    </TableCell>
+
+                    {/* Message */}
+                    <TableCell className="max-w-md">
+                      <div className="text-foreground text-xs font-mono font-medium line-clamp-2 leading-tight">
+                        {log.message}
+                      </div>
+                      {log.details && Object.keys(log.details).length > 0 && (
+                        <span className="text-[10px] font-mono text-muted-foreground truncate block mt-0.5">
+                          {JSON.stringify(log.details).slice(0, 70)}...
+                        </span>
                       )}
-                    >
-                      {/* Level Badge */}
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className={clsx(
-                          'px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border',
-                          isCritical ? 'bg-red-950 text-red-300 border-red-500/50' :
-                          isError ? 'bg-orange-950 text-orange-300 border-orange-500/50' :
-                          isWarn ? 'bg-amber-950 text-amber-300 border-amber-500/50' :
-                          'bg-cyan-950 text-cyan-300 border-cyan-500/40'
-                        )}>
-                          {log.level}
-                        </span>
-                      </td>
+                    </TableCell>
 
-                      {/* Timestamp */}
-                      <td className="py-3 px-4 whitespace-nowrap font-mono text-[11px] text-slate-400">
-                        {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                        <span className="block text-[10px] text-slate-500">
-                          {new Date(log.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                        </span>
-                      </td>
+                    {/* Joint / User */}
+                    <TableCell className="whitespace-nowrap font-mono">
+                      <div className="text-xs text-amber-400 font-medium">
+                        {log.jointId || '—'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {log.user || 'System'}
+                      </div>
+                    </TableCell>
 
-                      {/* Category & Source */}
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="font-mono text-cyan-300 font-semibold text-[11px]">
-                          {log.category}
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate max-w-[150px]">
-                          {log.source || 'Node Backend'}
-                        </div>
-                      </td>
+                    {/* Action */}
+                    <TableCell className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedLog(log)}
+                        className="h-6 px-2 text-[10px] font-mono gap-1"
+                      >
+                        <Terminal className="w-3 h-3 text-emerald-400" />
+                        JSON
+                      </Button>
+                    </TableCell>
 
-                      {/* Message */}
-                      <td className="py-3 px-4 max-w-md">
-                        <div className="text-slate-200 text-xs font-mono font-medium line-clamp-2 leading-relaxed">
-                          {log.message}
-                        </div>
-                        {log.details && Object.keys(log.details).length > 0 && (
-                          <span className="text-[10px] font-mono text-slate-500 truncate block mt-0.5">
-                            {JSON.stringify(log.details).slice(0, 70)}...
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Joint / User */}
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <div className="font-mono text-xs text-amber-300 font-medium">
-                          {log.jointId || '—'}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          {log.user || 'System'}
-                        </div>
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedLog(log);
-                          }}
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-[11px] font-mono inline-flex items-center gap-1"
-                        >
-                          <Terminal className="w-3 h-3 text-emerald-400" />
-                          JSON
-                        </button>
-                      </td>
-
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </Card>
 
       {/* Log Details Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#111726] border border-[#1f293d] rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
-            
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <span className="px-2.5 py-1 rounded text-xs font-mono font-bold uppercase bg-slate-800 border border-slate-700 text-cyan-300">
+        <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
+          <DialogContent className="max-w-2xl bg-surface border-border">
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <Badge variant={selectedLog.level === 'CRITICAL' ? 'critical' : 'default'} className="font-mono">
                   {selectedLog.level} • {selectedLog.category}
-                </span>
-                <h3 className="text-base font-bold text-white mt-2">
-                  {selectedLog.message}
-                </h3>
-                <span className="text-xs font-mono text-slate-400">
-                  Log ID: {selectedLog.logId || selectedLog._id} | {selectedLog.source}
-                </span>
+                </Badge>
+              </div>
+              <DialogTitle className="text-base font-bold text-foreground mt-2">
+                {selectedLog.message}
+              </DialogTitle>
+              <DialogDescription className="text-xs font-mono text-muted-foreground">
+                Log ID: {selectedLog.logId || selectedLog._id} • Source: {selectedLog.source}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 font-mono text-xs">
+              <div className="grid grid-cols-2 gap-2 text-xs bg-surface-sunken p-3 rounded-md border border-border">
+                <div><span className="text-muted-foreground">User:</span> <strong className="text-foreground">{selectedLog.user || 'System'}</strong></div>
+                <div><span className="text-muted-foreground">Joint ID:</span> <strong className="text-amber-400">{selectedLog.jointId || 'None'}</strong></div>
+                <div><span className="text-muted-foreground">Facility:</span> <strong className="text-primary">{selectedLog.facilityId}</strong></div>
+                <div><span className="text-muted-foreground">Timestamp:</span> <span className="tabular-nums text-foreground">{new Date(selectedLog.timestamp).toISOString()}</span></div>
               </div>
 
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div>
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+                  <span>Structured Document Payload:</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopyJson(selectedLog)}
+                    className="h-6 px-2 text-[10px] gap-1"
+                  >
+                    {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    {copied ? 'Copied' : 'Copy JSON'}
+                  </Button>
+                </div>
+                <pre className="p-3 bg-background border border-border rounded-md text-[11px] text-cyan-200 overflow-x-auto max-h-56">
+                  <code>{JSON.stringify(selectedLog, null, 2)}</code>
+                </pre>
+              </div>
             </div>
 
-            {/* JSON Viewer */}
-            <div className="relative rounded-xl bg-[#0a0d14] border border-[#1f293d] p-4 text-xs font-mono text-emerald-400 max-h-80 overflow-y-auto">
-              <button
-                onClick={() => handleCopyJson(selectedLog)}
-                className="absolute right-3 top-3 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-[11px] flex items-center gap-1"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? 'Copied' : 'Copy'}
-              </button>
-
-              <pre className="whitespace-pre-wrap leading-relaxed">
-                {JSON.stringify(selectedLog, null, 2)}
-              </pre>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1f293d]">
-              <button
+            <DialogFooter>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs font-semibold rounded-lg"
               >
                 Close
-              </button>
-            </div>
-
-          </div>
-        </div>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
-      {/* Insert Diagnostic Log Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#111726] border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            
-            <div className="flex items-center gap-2 text-emerald-400">
-              <Database className="w-5 h-5" />
-              <h3 className="text-base font-bold text-white">Insert Diagnostic Log Entry into MongoDB</h3>
-            </div>
+      {/* Insert Log Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="max-w-md bg-surface border-border">
+          <form onSubmit={handleCreateSubmit} className="space-y-3.5">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Insert Diagnostic Log Entry
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground font-mono">
+                Append custom inspection audit record into MongoDB telemetry collection.
+              </DialogDescription>
+            </DialogHeader>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Severity Level:</label>
-                <select
-                  value={newLogLevel}
-                  onChange={(e) => setNewLogLevel(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="INFO">INFO (Standard telemetry / audit)</option>
-                  <option value="WARN">WARN (Elevated wear / calibration drift)</option>
-                  <option value="ERROR">ERROR (Transducer fault / packet loss)</option>
-                  <option value="CRITICAL">CRITICAL (Splice joint rupture hazard)</option>
-                </select>
+            <div className="space-y-2.5 text-xs">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground">Severity Level:</Label>
+                  <select
+                    value={newLogLevel}
+                    onChange={(e) => setNewLogLevel(e.target.value)}
+                    className="w-full bg-surface-sunken border border-border rounded-md px-2.5 py-1.5 text-foreground text-xs font-mono"
+                  >
+                    <option value="INFO">INFO</option>
+                    <option value="WARN">WARN</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground">Category:</Label>
+                  <select
+                    value={newLogCategory}
+                    onChange={(e) => setNewLogCategory(e.target.value)}
+                    className="w-full bg-surface-sunken border border-border rounded-md px-2.5 py-1.5 text-foreground text-xs font-mono"
+                  >
+                    <option value="SYSTEM">SYSTEM</option>
+                    <option value="SENSOR">SENSOR</option>
+                    <option value="ANOMALY">ANOMALY</option>
+                    <option value="VISION">VISION</option>
+                    <option value="ALERT">ALERT</option>
+                    <option value="AUDIT">AUDIT</option>
+                    <option value="MAINTENANCE">MAINTENANCE</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Category:</label>
-                <select
-                  value={newLogCategory}
-                  onChange={(e) => setNewLogCategory(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="SYSTEM">SYSTEM</option>
-                  <option value="SENSOR">SENSOR</option>
-                  <option value="ANOMALY">ANOMALY</option>
-                  <option value="VISION">VISION</option>
-                  <option value="ALERT">ALERT</option>
-                  <option value="EMERGENCY">EMERGENCY</option>
-                  <option value="AUDIT">AUDIT</option>
-                  <option value="MAINTENANCE">MAINTENANCE</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Source Transducer / Component:</label>
-                <input
-                  type="text"
-                  value={newLogSource}
-                  onChange={(e) => setNewLogSource(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Target Splice Joint:</label>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Target Splice Joint:</Label>
                 <select
                   value={newLogJointId}
                   onChange={(e) => setNewLogJointId(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-surface-sunken border border-border rounded-md px-2.5 py-1.5 text-foreground text-xs font-mono"
                 >
-                  <option value="NONE">None / System Wide</option>
+                  <option value="NONE">General / None</option>
                   <option value="Joint-01">Joint-01 (Head Splice)</option>
-                  <option value="Joint-02">Joint-02 (Tensioning Zone)</option>
-                  <option value="Joint-03">Joint-03 (Feeder Chute Impact)</option>
-                  <option value="Joint-04">Joint-04 (Mid-Span Drive)</option>
-                  <option value="Joint-05">Joint-05 (High Tension Curve)</option>
-                  <option value="Joint-06">Joint-06 (Tail Pulley Return)</option>
+                  <option value="Joint-02">Joint-02 (Drive Return)</option>
+                  <option value="Joint-03">Joint-03 (Loading Zone)</option>
+                  <option value="Joint-04">Joint-04 (Carrying Strand)</option>
+                  <option value="Joint-05">Joint-05 (Tail Transition)</option>
+                  <option value="Joint-06">Joint-06 (Take-up Loop)</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Log Message:</label>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Log Message / Finding:</Label>
                 <textarea
-                  rows={2}
+                  rows={3}
                   required
-                  placeholder="e.g. Ultrasonic transducer calibration test executed successfully."
+                  placeholder="E.g. Visual verification performed on Joint-05 step-lap splice."
                   value={newLogMessage}
                   onChange={(e) => setNewLogMessage(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg p-2.5 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none font-mono"
+                  className="w-full bg-surface-sunken border border-border rounded-md p-2 text-foreground text-xs font-mono focus:border-primary focus:outline-none"
                 />
               </div>
+            </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1f293d]">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-lg flex items-center gap-1.5 shadow"
-                >
-                  {isSubmitting ? 'Saving to MongoDB...' : 'Save Log to MongoDB'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCreateModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="nominal"
+                size="sm"
+                disabled={isSubmitting}
+                className="font-bold font-mono"
+              >
+                {isSubmitting ? 'Inserting...' : 'Commit to MongoDB'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

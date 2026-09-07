@@ -1,5 +1,7 @@
 import React from 'react';
 import ConveyorScene from '../components/digital-twin/ConveyorScene.jsx';
+import { Card } from '../components/ui/card.jsx';
+import { Badge } from '../components/ui/badge.jsx';
 import { Boxes, Info, ShieldAlert, Cpu } from 'lucide-react';
 
 export default function DigitalTwin({
@@ -10,31 +12,34 @@ export default function DigitalTwin({
   telemetry
 }) {
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-4 animate-fade-in select-none">
       
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl text-slate-950 shadow-md">
+          <div className="p-1.5 bg-primary/10 border border-primary/30 rounded-lg text-primary shadow-xs">
             <Boxes className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              3D Interactive Digital Twin
+            <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
+              <span>3D Interactive Digital Twin</span>
+              <Badge variant="cyan" size="sm" className="font-mono text-[9px] py-0 px-1">
+                WebGL 60FPS
+              </Badge>
             </h1>
-            <p className="text-xs text-slate-400 font-mono">
-              NMDC Conveyor CV-101 (1200m Loop) • Real-Time Splice Mesh Raycaster
+            <p className="text-xs text-muted-foreground font-mono">
+              NMDC Conveyor CV-101 (1200m Loop) • Real-Time Splice Mesh Raycaster &amp; Structural Kinematics
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-lg bg-[#111726] border border-[#1f293d] text-xs font-mono text-cyan-300">
+          <Badge variant="cyan" className="font-mono text-xs shadow-xs">
             Speed: {telemetry?.sensors?.belt_speed || 4.2} m/s
-          </span>
-          <span className="px-2.5 py-1 rounded-lg bg-[#111726] border border-[#1f293d] text-xs font-mono text-orange-400">
+          </Badge>
+          <Badge variant="warning" className="font-mono text-xs shadow-xs">
             Load: {telemetry?.sensors?.dynamic_load || 1850} t/h
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -49,38 +54,38 @@ export default function DigitalTwin({
         activeJointId={telemetry?.activeJointId || 'Joint-01'}
       />
 
-      {/* Industrial Specs Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Industrial Specifications Ribbon */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d] space-y-1">
-          <div className="text-xs font-bold text-white flex items-center gap-1.5">
-            <Cpu className="w-4 h-4 text-cyan-400" />
+        <Card className="p-3.5 bg-surface border-border shadow-xs space-y-1 transition-colors">
+          <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Cpu className="w-4 h-4 text-primary" />
             ST-5400 Steel Cord Belt Architecture
           </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            1600mm width, high-impact rubber cover, 6 vulcanized step-lap splices circulating at 4.2 m/s.
+          <p className="text-[11px] text-muted-foreground leading-relaxed font-mono">
+            1600mm width, heavy-duty vulcanized rubber cover, 6 step-lap splices circulating continuously at 4.2 m/s.
           </p>
-        </div>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d] space-y-1">
-          <div className="text-xs font-bold text-white flex items-center gap-1.5">
-            <ShieldAlert className="w-4 h-4 text-amber-400" />
+        <Card className="p-3.5 bg-surface border-border shadow-xs space-y-1 transition-colors">
+          <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <ShieldAlert className="w-4 h-4 text-amber-500" />
             Joint Rupture Early Warning System
           </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Joint-05 exhibits core delamination with 14.2mm residual splice thickness (Limit: 15.0mm).
+          <p className="text-[11px] text-muted-foreground leading-relaxed font-mono">
+            Joint-05 exhibits core delamination with 14.2mm residual splice thickness (Mandatory threshold: 15.0mm).
           </p>
-        </div>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d] space-y-1">
-          <div className="text-xs font-bold text-white flex items-center gap-1.5">
-            <Info className="w-4 h-4 text-cyan-400" />
+        <Card className="p-3.5 bg-surface border-border shadow-xs space-y-1 transition-colors">
+          <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <Info className="w-4 h-4 text-primary" />
             Synchronized 3D Texture Engine
           </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Belt mesh linear translation speed is dynamically bound to the physical tachometer stream.
+          <p className="text-[11px] text-muted-foreground leading-relaxed font-mono">
+            Belt mesh linear translation speed is dynamically synchronized to the physical rotary tachometer stream.
           </p>
-        </div>
+        </Card>
 
       </div>
 

@@ -9,14 +9,14 @@ import {
   CartesianGrid
 } from 'recharts';
 import { SENSOR_METADATA } from '../../../../shared/constants.js';
-import { HeartPulse, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
-import clsx from 'clsx';
+import { Card } from '../ui/card.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { HeartPulse, ShieldCheck } from 'lucide-react';
 
-export default function ReliabilityHistoryPanel({ selectedSensor = 'drive_vibration', scores = {} }) {
-  const currentItem = scores[selectedSensor] || {};
+export default function ReliabilityHistoryPanel({ selectedSensor = 'drive_vibration', scores = {}, scoreData }) {
+  const currentItem = scoreData || scores[selectedSensor] || {};
   const meta = SENSOR_METADATA[selectedSensor] || { name: selectedSensor, unit: '' };
 
-  // Simulated 24-hour reliability degradation and recovery trend
   const historyTrend = [
     { time: '00:00', score: 98, uptime: 100, stuck: 100, noise: 95 },
     { time: '04:00', score: 96, uptime: 100, stuck: 100, noise: 90 },
@@ -27,64 +27,64 @@ export default function ReliabilityHistoryPanel({ selectedSensor = 'drive_vibrat
   ];
 
   return (
-    <div className="bg-[#111726] border border-[#1f293d] rounded-2xl p-5 space-y-5">
+    <Card className="p-4 bg-surface border-border shadow-xs space-y-4 transition-colors select-none">
       
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-cyan-950/80 border border-cyan-500/40 rounded-lg text-cyan-400">
+          <div className="p-1.5 bg-primary/10 border border-primary/30 rounded-md text-primary">
             <HeartPulse className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">
-              Reliability Trend: {meta.name}
+            <h3 className="text-xs font-bold text-foreground">
+              Reliability Trajectory: {meta.name}
             </h3>
-            <p className="text-[11px] text-slate-400 font-mono">
-              24-Hour Physics Data Quality Metric
+            <p className="text-[10px] text-muted-foreground font-mono">
+              24-Hour Physics Data Quality Metric History
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-slate-400">Current Health:</span>
-          <span className={clsx(
-            'px-2.5 py-0.5 text-xs font-mono font-bold rounded-full border',
-            (currentItem.reliabilityScore || 94) >= 85 ? 'bg-emerald-950 text-emerald-400 border-emerald-500/50' :
-            (currentItem.reliabilityScore || 94) >= 50 ? 'bg-amber-950 text-amber-400 border-amber-500/50' :
-            'bg-red-950 text-red-400 border-red-500/50'
-          )}>
+          <span className="text-xs font-mono text-muted-foreground">Channel Index:</span>
+          <Badge
+            variant={(currentItem.reliabilityScore || 94) >= 85 ? 'nominal' : ((currentItem.reliabilityScore || 94) >= 50 ? 'warning' : 'critical')}
+            size="default"
+            className="font-mono tabular-nums text-xs"
+          >
             {currentItem.reliabilityScore || 94}% ({currentItem.status || 'HEALTHY'})
-          </span>
+          </Badge>
         </div>
       </div>
 
       {/* Area Chart */}
-      <div className="h-56 w-full">
+      <div className="h-52 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={historyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={historyTrend} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
             <defs>
               <linearGradient id="relColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="#00e5ff" stopOpacity={0.0}/>
+                <stop offset="5%" stopColor="#0284C7" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#0284C7" stopOpacity={0.0}/>
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1f293d" vertical={false} />
-            <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={{ stroke: '#1f293d' }} />
-            <YAxis stroke="#64748b" fontSize={10} domain={[40, 100]} tickLine={false} axisLine={{ stroke: '#1f293d' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.2)" vertical={false} />
+            <XAxis dataKey="time" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(148, 163, 184, 0.3)' }} />
+            <YAxis stroke="#94A3B8" fontSize={10} domain={[40, 100]} tickLine={false} axisLine={{ stroke: 'rgba(148, 163, 184, 0.3)' }} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0c101a',
-                borderColor: '#1f293d',
+                backgroundColor: 'var(--surface, #FFFFFF)',
+                borderColor: 'var(--border, #E2E8F0)',
                 borderRadius: '8px',
                 fontSize: '11px',
-                fontFamily: 'monospace'
+                fontFamily: 'monospace',
+                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'
               }}
             />
             <Area
               type="monotone"
               dataKey="score"
               name="Reliability Score (%)"
-              stroke="#00e5ff"
+              stroke="#0284C7"
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#relColor)"
@@ -94,30 +94,19 @@ export default function ReliabilityHistoryPanel({ selectedSensor = 'drive_vibrat
       </div>
 
       {/* Exact SIH Formula Reference Box */}
-      <div className="p-4 rounded-xl bg-[#0a0d14] border border-[#1f293d] text-xs space-y-2">
-        <div className="flex items-center gap-2 text-cyan-400 font-mono font-bold">
+      <div className="p-3.5 rounded-lg bg-surface-sunken/70 border border-border text-xs space-y-2 select-none">
+        <div className="flex items-center gap-2 text-primary font-mono font-bold text-xs">
           <ShieldCheck className="w-4 h-4" />
-          <span>SIH PS 26008 Sensor Reliability Formula Reference</span>
+          <span>Physics Reliability Formula Reference</span>
         </div>
-        <div className="font-mono text-[11px] bg-slate-900/90 p-2.5 rounded border border-slate-800 text-slate-200 overflow-x-auto">
-          reliabilityScore = 0.35 × uptimeScore + 0.30 × stuckScore + 0.25 × rangeScore + 0.10 × jitterScore
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-400 pt-1">
-          <div className="p-2 rounded bg-slate-900/60 border border-slate-800/80">
-            <span className="text-emerald-400 font-bold block font-mono">≥ 85 (HEALTHY)</span>
-            Full 1.0x weighting used in ML RUL &amp; anomaly detection.
-          </div>
-          <div className="p-2 rounded bg-slate-900/60 border border-slate-800/80">
-            <span className="text-amber-400 font-bold block font-mono">50 - 84 (DEGRADED)</span>
-            Down-weighted by (score / 100) before ML ingestion.
-          </div>
-          <div className="p-2 rounded bg-slate-900/60 border border-slate-800/80">
-            <span className="text-red-400 font-bold block font-mono">&lt; 50 (FAULTY)</span>
-            Excluded from inference to prevent false emergency stops.
+        <div className="text-[11px] text-muted-foreground font-mono space-y-1">
+          <div><code>Score = 0.35(Uptime) + 0.30(Stuck) + 0.25(Range) + 0.10(Noise)</code></div>
+          <div className="text-[10px] text-muted-foreground">
+            Down-weights faulty sensor inputs to protect ML models from bad telemetry.
           </div>
         </div>
       </div>
 
-    </div>
+    </Card>
   );
 }

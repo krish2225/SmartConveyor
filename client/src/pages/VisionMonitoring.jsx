@@ -4,6 +4,8 @@ import AnalysisResultsPanel from '../components/vision/AnalysisResultsPanel.jsx'
 import SamplePickerModal from '../components/vision/SamplePickerModal.jsx';
 import { SAMPLE_CONVEYOR_SCANS } from '../assets/sampleScans.js';
 import { useBackendStatus } from '../hooks/useBackendStatus.js';
+import { listenToDeviceSnapshot } from '../firebase/firestore.js';
+import { Badge } from '../components/ui/badge.jsx';
 import { Camera, ShieldCheck, Zap, Wifi, WifiOff } from 'lucide-react';
 
 export default function VisionMonitoring({
@@ -18,6 +20,41 @@ export default function VisionMonitoring({
   const [activeScan, setActiveScan] = useState(SAMPLE_CONVEYOR_SCANS[0]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Subscribe to real-time ESP-CAM snapshots from Firestore
+  React.useEffect(() => {
+    const unsubSnap = listenToDeviceSnapshot('CB_001', (snapData) => {
+      if (snapData?.image_base64) {
+        const liveCamScan = {
+          incidentId: `SNAP-${snapData.timestamp || Date.now()}`,
+          frameId: `ESP-CAM-${snapData.resolution || 'QVGA'}`,
+          beltDistanceMeters: 580.0,
+          linkedJointId: 'Joint-05',
+          linkedJointName: 'Joint 05 (Tail Pulley Transition Splice)',
+          sector: 'Sector 3 (Tail Pulley Zone)',
+          camera: 'ESP-CAM Wireless Gantry (WiFi)',
+          timestamp: new Date((snapData.timestamp || Date.now() / 1000) * 1000).toISOString(),
+          classification: 'LIVE HARDWARE OPTICAL STREAM',
+          defectType: 'Surface Inspection',
+          isDefect: false,
+          confidence: 0.98,
+          severity: 'NOMINAL',
+          imageUrl: snapData.image_base64.startsWith('data:')
+            ? snapData.image_base64
+            : `data:image/jpeg;base64,${snapData.image_base64}`,
+          defectParameters: {
+            lengthMm: 0,
+            widthMm: 0,
+            depthMm: 0,
+            growthRatePctHr: 0,
+            beltThicknessMm: 24.2
+          }
+        };
+        setActiveScan(liveCamScan);
+      }
+    });
+    return () => unsubSnap();
+  }, []);
+
   // Handle manual sample selection from picker modal
   const handleSelectSample = (sample) => {
     setActiveScan(sample);
@@ -30,12 +67,11 @@ export default function VisionMonitoring({
     const beltDistance = Number((telemetry?.beltDisplacementMeters || 580.0).toFixed(1));
 
     try {
-      // 1. Send real HTTP request to Python FastAPI ML Backend on Port 8000
       const response = await fetch('http://127.0.0.1:8000/classify-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageRef: dataUrl.substring(0, 100) + '...', // send preview ref
+          imageRef: dataUrl.substring(0, 100) + '...',
           frameId,
           beltDistanceMeters: beltDistance
         })
@@ -83,7 +119,7 @@ export default function VisionMonitoring({
       console.warn('FastAPI backend not reachable on port 8000, using local heuristics:', err);
     }
 
-    // 2. Fallback heuristic if FastAPI server is temporarily stopped
+    // Fallback heuristic if FastAPI server is temporarily stopped
     const lowerName = fileName.toLowerCase();
     const isNominal = lowerName.includes('normal') || lowerName.includes('clean') || lowerName.includes('nominal') || lowerName.includes('pristine') || lowerName.includes('good') || lowerName.includes('ok');
     const isTear = lowerName.includes('tear') || lowerName.includes('rip') || lowerName.includes('slit');
@@ -201,19 +237,19 @@ export default function VisionMonitoring({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl text-slate-950 shadow-md">
+          <div className="p-1.5 bg-primary/20 border border-primary/40 rounded text-primary shadow-sm">
             <Camera className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
+            <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
               Vision Monitoring &amp; Defect Detection
             </h1>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-muted-foreground font-mono">
               YOLOv8-nano Computer Vision • Automatic Bounding-Box Detection &amp; Defect Geometry
             </p>
           </div>
@@ -221,19 +257,19 @@ export default function VisionMonitoring({
 
         {/* Live Backend Indicator in Header */}
         <div className="flex items-center gap-2">
-          <span className={`px-3 py-1 rounded-xl border text-xs font-mono font-semibold flex items-center gap-1.5 shadow-sm ${
-            backend.isOnline
-              ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-300'
-              : 'bg-red-950/80 border-red-500/40 text-red-300 animate-pulse'
-          }`}>
+          <Badge
+            variant={backend.isOnline ? "nominal" : "critical"}
+            size="default"
+            className="gap-1.5 font-mono text-[11px]"
+          >
             {backend.isOnline ? <Wifi className="w-3.5 h-3.5 text-emerald-400" /> : <WifiOff className="w-3.5 h-3.5 text-red-400" />}
-            <span>FASTAPI ML BACKEND: {backend.isOnline ? `ONLINE (${backend.latencyMs}ms)` : 'OFFLINE (Port 8000)'}</span>
-          </span>
+            <span>FASTAPI ML: {backend.isOnline ? `ONLINE (${backend.latencyMs}ms)` : 'OFFLINE (Port 8000)'}</span>
+          </Badge>
         </div>
       </div>
 
       {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
         
         {/* LEFT PANEL — Live Feed Analysis & Recent Scans (2 Cols) */}
         <div className="lg:col-span-2">

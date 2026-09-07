@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useBackendStatus } from '../../hooks/useBackendStatus.js';
+import { Badge } from '../ui/badge.jsx';
 import {
   LayoutDashboard,
   Box,
@@ -10,18 +11,17 @@ import {
   FileText,
   Settings,
   ShieldCheck,
-  Zap,
-  Radio,
   Wifi,
-  WifiOff
+  WifiOff,
+  Radio
 } from 'lucide-react';
-import clsx from 'clsx';
+import { cn } from '../../lib/utils.js';
 
 export default function Sidebar({
   isOpen,
   onClose,
   currentUser,
-  alertsCount = 0
+  activeAlertCount = 0
 }) {
   const backend = useBackendStatus();
 
@@ -31,61 +31,61 @@ export default function Sidebar({
       label: 'Dashboard',
       icon: LayoutDashboard,
       badge: null,
-      description: 'System Overview & ETTF'
+      description: 'Overview & 3D Spatial Twin'
     },
     {
       to: '/digital-twin',
       label: '3D Digital Twin',
       icon: Box,
       badge: '3D',
-      badgeColor: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
-      description: 'Interactive Belt & Splice Mesh'
+      badgeVariant: 'cyan',
+      description: 'Interactive Splice Raycaster'
     },
     {
       to: '/vision',
       label: 'Vision Monitoring',
       icon: Camera,
       badge: 'AI',
-      badgeColor: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30',
-      description: 'Line-Scan Surface Inspection'
+      badgeVariant: 'cyan',
+      description: 'Surface Defect Inspection'
     },
     {
       to: '/sensor-health',
       label: 'Sensor Health',
       icon: Activity,
       badge: null,
-      description: 'Reliability Index & Jitter'
+      description: 'Transducer Reliability'
     },
     {
       to: '/alerts',
       label: 'Alerts Feed',
       icon: BellRing,
-      badge: alertsCount > 0 ? String(alertsCount) : null,
-      badgeColor: 'bg-red-500 text-white animate-pulse',
-      description: 'Active & Acknowledged Events'
+      badge: activeAlertCount > 0 ? String(activeAlertCount) : null,
+      badgeVariant: activeAlertCount > 0 ? 'critical' : 'nominal',
+      description: 'Incident Management'
     },
     {
       to: '/logs',
       label: 'MongoDB Logs',
       icon: FileText,
       badge: 'MERN',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-      description: 'System & Sensor Telemetry Logs'
+      badgeVariant: 'nominal',
+      description: 'Historical Audit Stream'
     },
     {
       to: '/reports',
       label: 'Compliance Reports',
       icon: ShieldCheck,
       badge: null,
-      description: 'Maintenance & Compliance Audit'
+      description: 'ISO 10816 Audit Exports'
     },
     {
       to: '/settings',
       label: 'System Settings',
       icon: Settings,
       badge: currentUser?.role === 'SITE_ADMIN' ? 'ADMIN' : null,
-      badgeColor: 'bg-cyan-950 text-cyan-400 border border-cyan-500/40',
-      description: 'E-Stop Clearance & Thresholds'
+      badgeVariant: 'default',
+      description: 'Thresholds & Interlocks'
     }
   ];
 
@@ -95,19 +95,20 @@ export default function Sidebar({
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-30 lg:hidden"
         />
       )}
 
       <aside
-        className={clsx(
-          'fixed lg:sticky top-[57px] left-0 z-30 w-64 h-[calc(100vh-57px)] bg-[#0c101a] border-r border-[#1f293d] flex flex-col justify-between transition-transform duration-300 ease-in-out shrink-0 overflow-y-auto',
+        className={cn(
+          'fixed lg:sticky top-[49px] left-0 z-30 w-64 h-[calc(100vh-49px)] bg-surface border-r border-border flex flex-col justify-between transition-transform duration-200 ease-in-out shrink-0 select-none overflow-y-auto shadow-xs',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
-        <div className="p-3 space-y-1">
-          <div className="px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
-            Plant Navigation
+        <div className="p-3 space-y-1.5">
+          <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-bold flex items-center justify-between">
+            <span>Plant Console</span>
+            <Radio className="w-3 h-3 text-primary animate-pulse" />
           </div>
 
           <nav className="space-y-1">
@@ -121,33 +122,32 @@ export default function Sidebar({
                     if (window.innerWidth < 1024) onClose();
                   }}
                   className={({ isActive }) =>
-                    clsx(
-                      'flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group',
+                    cn(
+                      'flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group relative border',
                       isActive
-                        ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/10 text-cyan-300 border-l-4 border-cyan-400 shadow-sm'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-850 hover:bg-[#111726]'
+                        ? 'bg-primary/10 text-primary border-primary/30 font-semibold shadow-xs'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/70'
                     )
                   }
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 shrink-0 transition-colors group-hover:text-cyan-400" />
-                    <div>
-                      <div className="font-semibold text-slate-200">{item.label}</div>
-                      <div className="text-[10px] text-slate-400 font-normal leading-tight">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Icon className="w-4.5 h-4.5 shrink-0 transition-colors group-hover:text-primary text-muted-foreground" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold leading-tight truncate">{item.label}</div>
+                      <div className="text-[10px] text-muted-foreground font-normal leading-none mt-0.5 truncate">
                         {item.description}
                       </div>
                     </div>
                   </div>
 
                   {item.badge && (
-                    <span
-                      className={clsx(
-                        'px-2 py-0.5 text-[10px] font-mono font-bold rounded-full shadow-sm',
-                        item.badgeColor || 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                      )}
+                    <Badge
+                      variant={item.badgeVariant || 'default'}
+                      size="sm"
+                      className="ml-auto shrink-0 text-[9px] px-1.5 font-mono"
                     >
                       {item.badge}
-                    </span>
+                    </Badge>
                   )}
                 </NavLink>
               );
@@ -156,41 +156,41 @@ export default function Sidebar({
         </div>
 
         {/* Live MERN Backend Connection Status Card */}
-        <div className={clsx(
-          'p-3 m-3 rounded-xl text-xs space-y-2 border transition-all',
+        <div className={cn(
+          'p-3 m-3 rounded-lg text-xs space-y-1.5 border transition-all shadow-xs',
           backend.isOnline
-            ? 'bg-[#111726] border-emerald-500/40 shadow-sm'
-            : 'bg-red-950/20 border-red-500/40'
+            ? 'bg-surface-sunken/80 border-emerald-500/30'
+            : 'bg-red-50 dark:bg-red-950/20 border-red-500/40'
         )}>
-          <div className="flex items-center justify-between gap-1 text-[11px] font-mono font-bold uppercase">
+          <div className="flex items-center justify-between gap-1 text-[10px] font-mono font-bold uppercase">
             <div className="flex items-center gap-1.5">
               {backend.isOnline ? (
-                <Wifi className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                <Wifi className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
               ) : (
-                <WifiOff className="w-3.5 h-3.5 text-red-400 animate-bounce" />
+                <WifiOff className="w-3.5 h-3.5 text-red-500 animate-bounce" />
               )}
-              <span className={backend.isOnline ? 'text-emerald-400' : 'text-red-400'}>
-                MERN BACKEND {backend.isOnline ? 'ONLINE' : 'OFFLINE'}
+              <span className={backend.isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
+                MERN CORE {backend.isOnline ? 'ONLINE' : 'OFFLINE'}
               </span>
             </div>
             {backend.isOnline && (
-              <span className="text-[10px] text-emerald-400 font-bold font-mono">
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono tabular-nums">
                 {backend.latencyMs}ms
               </span>
             )}
           </div>
 
-          <div className="text-[10px] text-slate-300 leading-relaxed font-mono">
+          <div className="text-[10px] text-muted-foreground leading-tight font-mono">
             {backend.isOnline ? (
-              <span>Express API &amp; MongoDB active (port 5000). Live 20Hz Firebase sensor stream connected.</span>
+              <span>Express API &amp; MongoDB active (5000). 20Hz telemetry.</span>
             ) : (
-              <span className="text-red-300">Express API offline on port 5000. Run <code>npm start</code> in <code>server/</code>.</span>
+              <span className="text-red-500">Express API offline on port 5000.</span>
             )}
           </div>
 
-          <div className="pt-1.5 border-t border-[#1f293d] flex items-center justify-between text-[10px] font-mono text-slate-400">
-            <span>DB: {backend.dbConnected ? 'MongoDB (Active)' : 'Memory Fallback'}</span>
-            <span className={backend.isOnline ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
+          <div className="pt-1.5 border-t border-border flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+            <span>DB: {backend.dbConnected ? 'MongoDB' : 'Memory Store'}</span>
+            <span className={backend.isOnline ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-red-500 font-bold'}>
               {backend.isOnline ? '100% Synced' : 'Disconnected'}
             </span>
           </div>

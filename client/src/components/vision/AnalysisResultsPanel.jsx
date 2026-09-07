@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBadge from '../shared/StatusBadge.jsx';
 import { triggerFacilityEmergencyStop } from '../../firebase/firestore.js';
+import { Card } from '../ui/card.jsx';
+import { Button } from '../ui/button.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { Progress } from '../ui/progress.jsx';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog.jsx';
+import { Label } from '../ui/label.jsx';
 import {
   AlertOctagon,
   Wrench,
@@ -11,10 +24,9 @@ import {
   MapPin,
   CheckCircle2,
   Send,
-  ArrowRight,
   ShieldAlert
 } from 'lucide-react';
-import clsx from 'clsx';
+import { cn } from '../../lib/utils.js';
 
 export default function AnalysisResultsPanel({
   activeScan,
@@ -69,131 +81,129 @@ export default function AnalysisResultsPanel({
 
   return (
     <>
-      <div className="bg-[#111726] border border-[#1f293d] rounded-2xl p-5 flex flex-col justify-between h-full space-y-4 shadow-xl">
+      <Card className="p-4 bg-surface border-border shadow-xs flex flex-col justify-between h-full space-y-3.5 select-none transition-colors">
         
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           
           {/* Header */}
-          <div className="flex items-center justify-between gap-2 border-b border-[#1f293d] pb-3">
+          <div className="flex items-center justify-between gap-2 border-b border-border pb-2.5">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-cyan-950/80 border border-cyan-500/40 rounded-lg text-cyan-400">
+              <div className="p-1.5 bg-primary/10 border border-primary/30 rounded-md text-primary">
                 <Cpu className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-white tracking-wide">Analysis Results</h3>
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider font-mono">Analysis Results</h3>
             </div>
-            <StatusBadge status={activeScan?.severity || 'CRITICAL'} />
+            <StatusBadge status={activeScan?.severity || 'CRITICAL'} size="xs" />
           </div>
 
           {/* 1. STATUS Headline */}
-          <div className="space-y-1">
-            <div className="text-[11px] font-mono uppercase tracking-wider font-bold text-slate-400">
-              STATUS
+          <div className="space-y-0.5">
+            <div className="text-[10px] font-mono uppercase tracking-wider font-bold text-muted-foreground">
+              CLASSIFICATION STATUS
             </div>
-            <div className={clsx(
-              'text-lg font-black tracking-tight',
-              isCritical ? 'text-red-400' : (isWarning ? 'text-amber-400' : 'text-emerald-400')
+            <div className={cn(
+              'text-sm sm:text-base font-bold tracking-tight',
+              isCritical ? 'text-red-600 dark:text-red-400' : (isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')
             )}>
               {activeScan?.classification || 'CRITICAL - Splice Joint Delamination'}
             </div>
           </div>
 
           {/* 2. CONFIDENCE Progress Bar */}
-          <div className="space-y-1.5 p-3 bg-[#0a0d14] border border-[#1f293d] rounded-xl">
+          <div className="space-y-1.5 p-2.5 bg-surface-sunken/70 border border-border/80 rounded-lg">
             <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-300 font-semibold">CONFIDENCE</span>
-              <span className={clsx('font-bold', isCritical ? 'text-red-400' : 'text-cyan-400')}>
+              <span className="text-muted-foreground font-semibold text-[11px]">AI CONFIDENCE</span>
+              <span className={cn('font-bold tabular-nums', isCritical ? 'text-red-500' : 'text-primary')}>
                 {confidencePct}%
               </span>
             </div>
-            <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-              <div
-                className={clsx(
-                  'h-full rounded-full transition-all duration-500',
-                  isCritical ? 'bg-gradient-to-r from-orange-500 to-red-500' : 'bg-gradient-to-r from-cyan-500 to-blue-500'
-                )}
-                style={{ width: `${confidencePct}%` }}
-              />
-            </div>
-            <div className="text-[10px] font-mono text-slate-500 flex justify-between">
-              <span>YOLOv8-nano Classifier</span>
+            <Progress
+              value={confidencePct}
+              className="h-2"
+              indicatorClassName={isCritical ? 'bg-red-500' : (isWarning ? 'bg-amber-500' : 'bg-primary')}
+            />
+            <div className="text-[10px] font-mono text-muted-foreground flex justify-between pt-0.5">
+              <span>YOLOv8-nano</span>
               <span>Model Ver: 2.4.1</span>
             </div>
           </div>
 
           {/* 3. AFFECTED COMPONENT Box with LOCATE Button */}
-          <div className="p-3 bg-[#0a0d14] border border-[#1f293d] rounded-xl space-y-2">
-            <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold">
-              AFFECTED COMPONENT
+          <div className="p-2.5 bg-surface-sunken/70 border border-border/80 rounded-lg space-y-1.5">
+            <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">
+              AFFECTED SPLICE COMPONENT
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-xs font-bold text-white truncate font-mono">
+                <div className="text-xs font-bold text-foreground truncate font-mono">
                   {linkedJointId}
                 </div>
-                <div className="text-[11px] text-slate-400 truncate">
+                <div className="text-[10px] text-muted-foreground truncate">
                   {linkedJointName}
                 </div>
               </div>
 
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleNavigateToDigitalTwin}
-                className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/50 rounded-lg text-xs font-mono font-bold transition-all flex items-center gap-1 shrink-0 shadow-sm"
+                className="font-mono text-xs gap-1 shrink-0 text-primary border-primary/40 hover:bg-primary/10 h-7 px-2"
               >
                 <MapPin className="w-3.5 h-3.5" />
                 Locate
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* 4. DEFECT PARAMETERS Card */}
-          <div className="space-y-2">
-            <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold">
-              Defect Parameters
+          <div className="space-y-1.5">
+            <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">
+              Defect Geometry Parameters
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               
               {/* Length (est) */}
-              <div className="p-2.5 bg-[#0a0d14] border border-[#1f293d] rounded-lg">
-                <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-                  <Ruler className="w-3 h-3 text-cyan-400" />
+              <div className="p-2 bg-surface-sunken/70 border border-border/80 rounded-lg">
+                <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
+                  <Ruler className="w-3 h-3 text-primary" />
                   Length (est)
                 </div>
-                <div className="text-sm font-bold font-mono text-white mt-1">
+                <div className="text-xs font-bold font-mono text-foreground mt-0.5 tabular-nums">
                   {params.lengthMm || params.crackLengthMm || 1180} mm
                 </div>
               </div>
 
               {/* Width (max) */}
-              <div className="p-2.5 bg-[#0a0d14] border border-[#1f293d] rounded-lg">
-                <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-                  <Ruler className="w-3 h-3 text-cyan-400" />
+              <div className="p-2 bg-surface-sunken/70 border border-border/80 rounded-lg">
+                <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
+                  <Ruler className="w-3 h-3 text-primary" />
                   Width (max)
                 </div>
-                <div className="text-sm font-bold font-mono text-white mt-1">
+                <div className="text-xs font-bold font-mono text-foreground mt-0.5 tabular-nums">
                   {params.widthMm || params.tearWidthMm || 54} mm
                 </div>
               </div>
 
               {/* Depth (est) */}
-              <div className="p-2.5 bg-[#0a0d14] border border-[#1f293d] rounded-lg">
-                <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-                  <ShieldAlert className="w-3 h-3 text-amber-400" />
+              <div className="p-2 bg-surface-sunken/70 border border-border/80 rounded-lg">
+                <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
+                  <ShieldAlert className="w-3 h-3 text-amber-500" />
                   Depth (est)
                 </div>
-                <div className="text-sm font-bold font-mono text-amber-300 mt-1">
+                <div className="text-xs font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5 tabular-nums">
                   {params.depthMm || 14.8} mm
                 </div>
               </div>
 
               {/* Growth Rate (%/hr) */}
-              <div className="p-2.5 bg-[#0a0d14] border border-[#1f293d] rounded-lg">
-                <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-                  <TrendingUp className="w-3 h-3 text-red-400" />
+              <div className="p-2 bg-surface-sunken/70 border border-border/80 rounded-lg">
+                <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
+                  <TrendingUp className="w-3 h-3 text-red-500" />
                   Growth Rate
                 </div>
-                <div className="text-sm font-bold font-mono text-red-400 mt-1">
-                  +{params.growthRatePctHr || 8.4} %/hr
+                <div className="text-xs font-bold font-mono text-red-600 dark:text-red-400 mt-0.5 tabular-nums">
+                  +{params.growthRatePctHr || 8.4}% / hr
                 </div>
               </div>
 
@@ -202,104 +212,110 @@ export default function AnalysisResultsPanel({
 
         </div>
 
-        {/* 5. Action Buttons: Initiate Emergency Stop (Full Width Red) & Log Maintenance Ticket */}
-        <div className="space-y-2 pt-3 border-t border-[#1f293d]">
-          <button
-            onClick={handleTriggerEmergencyStop}
-            className="w-full py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center justify-center gap-2 border border-red-400 uppercase tracking-wider"
-          >
-            <AlertOctagon className="w-4 h-4 animate-bounce" />
-            Initiate Emergency Stop
-          </button>
-
-          <button
+        {/* Action Buttons: Log Maintenance Ticket & Emergency Stop */}
+        <div className="pt-3 border-t border-border space-y-2">
+          
+          <Button
+            variant="default"
+            size="sm"
             onClick={() => setShowTicketModal(true)}
-            className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2"
+            className="w-full font-mono text-xs font-bold gap-1.5 h-8.5 shadow-sm"
           >
-            <Wrench className="w-4 h-4 text-cyan-400" />
-            Log Maintenance Ticket
-          </button>
+            <Wrench className="w-3.5 h-3.5" />
+            Dispatch Maintenance Ticket
+          </Button>
+
+          {isCritical && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleTriggerEmergencyStop}
+              className="w-full font-mono text-xs font-bold uppercase gap-1.5 h-8.5 shadow-sm"
+            >
+              <AlertOctagon className="w-3.5 h-3.5" />
+              Direct Emergency Line Halt
+            </Button>
+          )}
+
         </div>
 
-      </div>
+      </Card>
 
-      {/* Log Maintenance Ticket Modal */}
-      {showTicketModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#111726] border border-cyan-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-            {ticketLogged ? (
-              <div className="text-center py-6 space-y-3">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-bold text-white">Maintenance Ticket Dispatched</h3>
-                <p className="text-xs text-slate-300 font-mono">
-                  Ticket #WO-2026-9812 assigned to Mechanical Crew Alpha.
-                </p>
+      {/* Dispatch Ticket Modal */}
+      <Dialog open={showTicketModal} onOpenChange={setShowTicketModal}>
+        <DialogContent className="max-w-md bg-surface border-border shadow-xl">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-primary/10 border border-primary/30 rounded text-primary">
+                <Wrench className="w-4 h-4" />
               </div>
-            ) : (
-              <form onSubmit={handleLogTicket} className="space-y-4">
-                <div className="flex items-center gap-2 text-cyan-400">
-                  <Wrench className="w-5 h-5" />
-                  <h3 className="text-base font-bold text-white">Dispatch Splice Repair Order</h3>
-                </div>
+              <div>
+                <DialogTitle className="text-sm font-bold text-foreground">
+                  Dispatch Maintenance Work Order
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground font-mono">
+                  Generates SAP PM work order for NMDC Bailadila maintenance crew.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
 
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Target Component:</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={`${facilityId.toUpperCase()} | ${linkedJointName}`}
-                      className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-400 font-mono text-xs"
-                    />
-                  </div>
+          {ticketLogged ? (
+            <div className="py-6 text-center space-y-2 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="w-10 h-10 mx-auto animate-bounce" />
+              <div className="font-bold text-sm">Work Order Dispatched Successfully!</div>
+              <div className="text-xs text-muted-foreground font-mono">
+                SAP PM Ref: #WO-2026-NMDC-{Math.floor(1000 + Math.random() * 9000)}
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleLogTicket} className="space-y-3 py-2 text-xs">
+              <div>
+                <Label className="text-xs font-semibold text-foreground">Priority Level</Label>
+                <select
+                  value={ticketPriority}
+                  onChange={(e) => setTicketPriority(e.target.value)}
+                  className="w-full bg-surface-sunken border border-border rounded-md px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none font-mono mt-1"
+                >
+                  <option value="P1 - Urgent Vulcanizing Overhaul (< 24h)">P1 - Urgent Vulcanizing Overhaul (&lt; 24h)</option>
+                  <option value="P2 - Next Scheduled Shift Maintenance">P2 - Next Scheduled Shift Maintenance</option>
+                  <option value="P3 - Monitor at Next Pulley Inspection">P3 - Monitor at Next Pulley Inspection</option>
+                </select>
+              </div>
 
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Work Order Priority:</label>
-                    <select
-                      value={ticketPriority}
-                      onChange={(e) => setTicketPriority(e.target.value)}
-                      className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-200 text-xs focus:border-cyan-500 focus:outline-none"
-                    >
-                      <option value="P1 - Urgent Vulcanizing Overhaul (< 24h)">P1 - Urgent Vulcanizing Overhaul (&lt; 24h)</option>
-                      <option value="P2 - Next Shift Inspection">P2 - Next Shift Inspection</option>
-                      <option value="P3 - Routine Cold Patch">P3 - Routine Cold Patch</option>
-                    </select>
-                  </div>
+              <div>
+                <Label className="text-xs font-semibold text-foreground">Defect Description &amp; Notes</Label>
+                <textarea
+                  value={ticketNotes}
+                  onChange={(e) => setTicketNotes(e.target.value)}
+                  rows={3}
+                  className="w-full bg-surface-sunken border border-border rounded-md px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none font-mono mt-1"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Diagnostic Notes:</label>
-                    <textarea
-                      rows={3}
-                      value={ticketNotes}
-                      onChange={(e) => setTicketNotes(e.target.value)}
-                      className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg p-2.5 text-slate-200 text-xs focus:border-cyan-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1f293d]">
-                  <button
-                    type="button"
-                    onClick={() => setShowTicketModal(false)}
-                    className="px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold rounded-lg"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-lg flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    Dispatch Ticket
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+              <DialogFooter className="gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTicketModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="default"
+                  size="sm"
+                  className="gap-1 font-bold"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  Dispatch Ticket
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

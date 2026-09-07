@@ -1,6 +1,8 @@
 import React from 'react';
-import { ShieldAlert, ShieldCheck, Clock, AlertTriangle, Cpu } from 'lucide-react';
-import clsx from 'clsx';
+import { ShieldAlert, ShieldCheck, Clock, AlertTriangle, Cpu, Activity, Sparkles } from 'lucide-react';
+import { Card, CardContent } from '../ui/card.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { cn } from '../../lib/utils.js';
 
 export default function HealthRiskGauge({
   riskScore = 84.6,
@@ -10,76 +12,77 @@ export default function HealthRiskGauge({
   healthyCount = 4,
   activeJointId = 'Joint-05'
 }) {
-  // SVG circular progress math
-  const radius = 80;
+  const radius = 68;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (Math.min(100, Math.max(0, riskScore)) / 100) * circumference;
+
+  const systemHealth = Math.max(0, Math.min(100, (100 - riskScore))).toFixed(1);
+  const rulHours = Math.round(estimatedTimeToFailureDays * 24);
 
   const getRiskTheme = (score) => {
     if (score >= 70) {
       return {
-        color: '#ef4444',
-        glow: 'glow-border-red',
-        textColor: 'text-red-400',
-        bgPill: 'bg-red-950/80 border-red-500/50 text-red-300',
-        title: 'CRITICAL RUPTURE RISK',
-        desc: 'Immediate vulcanization splice maintenance mandated on Joint-05.'
+        color: '#EF4444',
+        statusVariant: 'critical',
+        badgeLabel: 'CRITICAL RUPTURE HAZARD',
+        title: 'CRITICAL SPLICE RUPTURE HAZARD',
+        desc: 'Immediate vulcanization splice maintenance mandated on Joint-05 before line resumption.',
+        borderStyle: 'border-red-500/40 shadow-red-500/5'
       };
     }
     if (score >= 35) {
       return {
-        color: '#f59e0b',
-        glow: 'glow-border-amber',
-        textColor: 'text-amber-400',
-        bgPill: 'bg-amber-950/80 border-amber-500/50 text-amber-300',
-        title: 'ELEVATED JOINT WEAR',
-        desc: 'Splice thinning detected. Plan maintenance in next scheduled overhaul.'
+        color: '#F59E0B',
+        statusVariant: 'warning',
+        badgeLabel: 'ELEVATED WEAR',
+        title: 'ELEVATED JOINT WEAR DETECTED',
+        desc: 'Splice thinning & moderate vibration detected. Schedule overhaul in next maintenance window.',
+        borderStyle: 'border-amber-500/40 shadow-amber-500/5'
       };
     }
     return {
-      color: '#10b981',
-      glow: 'glow-border-cyan',
-      textColor: 'text-emerald-400',
-      bgPill: 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300',
-      title: 'OPTIMAL JOINT INTEGRITY',
-      desc: 'All 6 vulcanized splices within normal operational parameters.'
+      color: '#16A34A',
+      statusVariant: 'nominal',
+      badgeLabel: 'OPTIMAL INTEGRITY',
+      title: 'OPTIMAL CONVEYOR INTEGRITY',
+      desc: 'All 6 vulcanized splices circulating within normal design operational parameters.',
+      borderStyle: 'border-emerald-500/30 shadow-emerald-500/5'
     };
   };
 
   const theme = getRiskTheme(riskScore);
 
   return (
-    <div className={clsx(
-      'bg-[#111726] border border-[#1f293d] rounded-2xl p-6 relative overflow-hidden transition-all',
-      theme.glow
-    )}>
-      {/* Background radial gradient accent */}
+    <Card className={cn("p-4 sm:p-5 relative overflow-hidden transition-all bg-surface border shadow-xs", theme.borderStyle)}>
+      
+      {/* Background radial accent */}
       <div
-        className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-3xl opacity-20 pointer-events-none"
+        className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
         style={{ backgroundColor: theme.color }}
       />
 
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-5 lg:gap-7">
 
         {/* Left: Gauge Circle */}
         <div className="relative flex items-center justify-center shrink-0">
-          <svg className="w-48 h-48 transform -rotate-90">
+          <svg className="w-40 h-40 transform -rotate-90">
             {/* Background track */}
             <circle
-              cx="96"
-              cy="96"
+              cx="80"
+              cy="80"
               r={radius}
-              stroke="#1e293b"
-              strokeWidth="12"
+              stroke="currentColor"
+              className="text-slate-200 dark:text-slate-800"
+              strokeWidth="9"
               fill="transparent"
             />
             {/* Dynamic progress track */}
             <circle
-              cx="96"
-              cy="96"
+              cx="80"
+              cy="80"
               r={radius}
               stroke={theme.color}
-              strokeWidth="12"
+              strokeWidth="9"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
@@ -89,82 +92,86 @@ export default function HealthRiskGauge({
           </svg>
 
           {/* Center text in circle */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-3xl font-extrabold font-mono tracking-tight text-white">
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none">
+            <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-foreground tabular-nums">
               {riskScore}%
             </span>
-            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
               Rupture Risk
             </span>
-            <span className={clsx('text-[10px] font-bold mt-1 px-2 py-0.5 rounded-full border', theme.bgPill)}>
+            <Badge variant={theme.statusVariant} size="sm" className="mt-1 font-mono text-[9px] px-1.5 py-0">
               {riskScore >= 70 ? 'CRITICAL' : (riskScore >= 35 ? 'WARNING' : 'HEALTHY')}
-            </span>
+            </Badge>
           </div>
         </div>
 
-        {/* Center: Risk Summary & ETTF Metrics */}
-        <div className="flex-1 space-y-4 text-center lg:text-left">
+        {/* Center: Risk Summary & KPIs */}
+        <div className="flex-1 space-y-3 text-center md:text-left min-w-0">
           <div>
-            <div className="flex items-center justify-center lg:justify-start gap-2">
-              <span className={clsx('text-xs font-mono font-bold uppercase tracking-wider', theme.textColor)}>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+              <Badge variant="cyan" size="sm" className="font-mono text-[10px] py-0.5">
                 ● ML Predictive Intelligence
+              </Badge>
+              <span className="text-xs text-border font-mono hidden sm:inline">|</span>
+              <span className="text-xs font-mono text-muted-foreground">
+                Fleet Status: <strong className="text-foreground font-bold">{systemHealth}% System Health</strong>
               </span>
-              <span className="text-xs text-slate-500 font-mono">|</span>
-
             </div>
-            <h2 className="text-xl font-bold text-white mt-1">
+
+            <h2 className="text-base sm:text-lg font-bold text-foreground mt-1 tracking-tight">
               {theme.title}
             </h2>
-            <p className="text-xs text-slate-400 mt-1 max-w-md">
+            <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl leading-relaxed">
               {theme.desc}
             </p>
           </div>
 
           {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 
-            {/* ETTF Card */}
-            <div className="bg-[#0a0d14]/80 border border-[#1f293d] rounded-xl p-3">
-              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
-                <Clock className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Est. Time to Failure</span>
+            {/* RUL Card */}
+            <div className="bg-surface-sunken/70 border border-border/80 rounded-lg p-2.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-mono">
+                <Clock className="w-3.5 h-3.5 text-primary" />
+                <span>Est. RUL</span>
               </div>
-              <div className="text-lg font-bold font-mono text-white mt-1">
-                {estimatedTimeToFailureDays} <span className="text-xs text-slate-400 font-normal">days</span>
+              <div className="text-base sm:text-lg font-bold font-mono text-foreground mt-0.5 tabular-nums">
+                {rulHours} <span className="text-[11px] text-muted-foreground font-normal">hours</span>
+                <span className="text-xs text-muted-foreground ml-1 font-mono">({estimatedTimeToFailureDays}d)</span>
               </div>
-              <div className="text-[10px] text-red-400 font-mono mt-0.5">
+              <div className="text-[10px] text-red-500 font-mono mt-0.5 font-medium truncate">
                 (Joint-05 Splice Core)
               </div>
             </div>
 
-            {/* Joint Degradation Count */}
-            <div className="bg-[#0a0d14]/80 border border-[#1f293d] rounded-xl p-3">
-              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            {/* Joint Degradation Breakdown */}
+            <div className="bg-surface-sunken/70 border border-border/80 rounded-lg p-2.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-mono">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                 <span>Degraded Joints</span>
               </div>
-              <div className="text-lg font-bold font-mono text-white mt-1">
-                <span className="text-red-400">{criticalCount}</span>
-                <span className="text-slate-500 text-sm mx-1">/</span>
-                <span className="text-amber-400">{warningCount}</span>
-                <span className="text-slate-500 text-sm mx-1">/</span>
-                <span className="text-emerald-400">{healthyCount}</span>
+              <div className="text-base sm:text-lg font-bold font-mono text-foreground mt-0.5 tabular-nums">
+                <span className="text-red-500">{criticalCount}</span>
+                <span className="text-muted-foreground text-xs mx-1">/</span>
+                <span className="text-amber-500">{warningCount}</span>
+                <span className="text-muted-foreground text-xs mx-1">/</span>
+                <span className="text-emerald-500">{healthyCount}</span>
               </div>
-              <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+              <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
                 Crit / Warn / Optimal
               </div>
             </div>
 
             {/* Active Joint Passing */}
-            <div className="bg-[#0a0d14]/80 border border-[#1f293d] rounded-xl p-3 col-span-2 sm:col-span-1">
-              <div className="flex items-center gap-1.5 text-slate-400 text-xs font-mono">
-                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="bg-surface-sunken/70 border border-border/80 rounded-lg p-2.5">
+              <div className="flex items-center gap-1.5 text-muted-foreground text-[11px] font-mono">
+                <Cpu className="w-3.5 h-3.5 text-primary" />
                 <span>Tracking Station</span>
               </div>
-              <div className="text-sm font-bold font-mono text-cyan-300 mt-1 truncate">
+              <div className="text-sm sm:text-base font-bold font-mono text-primary mt-0.5 truncate">
                 {activeJointId}
               </div>
-              <div className="text-[10px] text-emerald-400 font-mono mt-0.5">
+              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 font-medium">
                 ● In-Transit (4.2 m/s)
               </div>
             </div>
@@ -173,6 +180,6 @@ export default function HealthRiskGauge({
         </div>
 
       </div>
-    </div>
+    </Card>
   );
 }

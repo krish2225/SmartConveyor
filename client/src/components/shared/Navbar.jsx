@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PlantSelector from './PlantSelector.jsx';
 import { triggerFacilityEmergencyStop } from '../../firebase/firestore.js';
 import { useTheme } from '../../context/ThemeContext.jsx';
+import { Button } from '../ui/button.jsx';
+import { Badge } from '../ui/badge.jsx';
 import {
-  Activity,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog.jsx';
+import { Label } from '../ui/label.jsx';
+import {
   AlertOctagon,
-  ShieldAlert,
-  Radio,
-  User,
   LogOut,
   Cpu,
-  Clock,
-  Flame,
-  Layers
+  Menu,
+  Sun,
+  Moon,
+  Boxes,
+  Palette,
+  Radio
 } from 'lucide-react';
 
 export default function Navbar({
@@ -24,7 +34,8 @@ export default function Navbar({
   emergencyStatus,
   onToggleSidebar
 }) {
-  const { theme, isHematite, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [showStopModal, setShowStopModal] = useState(false);
   const [stopReason, setStopReason] = useState('Critical Splice Joint Rupture Detected');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,113 +52,154 @@ export default function Navbar({
     }
   };
 
+  const cycleTheme = () => {
+    if (theme === 'industrial') setTheme('dark');
+    else if (theme === 'dark') setTheme('light');
+    else setTheme('industrial');
+  };
+
   return (
     <>
-      <header className="bg-[#0c101a] border-b border-[#1f293d] px-4 py-2.5 sticky top-0 z-40 transition-colors duration-200">
-        <div className="flex items-center justify-between gap-4">
+      <header className="bg-surface/95 backdrop-blur-md border-b border-border px-4 sm:px-6 lg:px-8 py-2.5 sticky top-0 z-40 select-none shadow-sm transition-colors w-full">
+        <div className="flex items-center justify-between gap-4 w-full">
           
-          {/* Left: Mobile Menu Toggle & Brand */}
-          <div className="flex items-center gap-3">
-            <button
+          {/* Left: Mobile Toggle & Industrial Brand + Plant Selector */}
+          <div className="flex items-center gap-4 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={onToggleSidebar}
-              className="lg:hidden p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              className="lg:hidden text-muted-foreground hover:text-foreground h-8 w-8"
               aria-label="Toggle navigation menu"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+              <Menu className="w-4 h-4" />
+            </Button>
 
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                <Cpu className="w-5 h-5 text-slate-950 font-black" />
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500/20 transition-all shadow-xs">
+                <Cpu className="w-5 h-5" />
               </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-sm md:text-base tracking-tight bg-gradient-to-r from-amber-400 via-orange-300 to-amber-100 bg-clip-text text-transparent">
-                    SmartConveyor
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-sm sm:text-base tracking-tight text-foreground">
+                    Smart<span className="text-cyan-400">Conveyor</span>
                   </span>
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-500/30 text-amber-400 font-semibold hidden sm:inline-block">
-                    SIH-26008
-                  </span>
+                  <Badge variant="cyan" size="sm" className="hidden sm:inline-flex text-[9px] py-0 px-1.5 font-mono">
+                    CB_001
+                  </Badge>
                 </div>
-                <div className="text-[10px] text-slate-400 font-mono tracking-wider">
+                <div className="text-[10px] text-muted-foreground font-mono tracking-wider truncate">
                   NMDC BAILADILA IRON ORE MINES
                 </div>
               </div>
             </Link>
-          </div>
 
-          {/* Center: Plant Selector & Live Status Pill */}
-          <div className="hidden md:flex items-center gap-3">
-            <PlantSelector
-              activeFacilityId={activeFacilityId}
-              onSelectFacility={onSelectFacility}
-            />
-
-            <div className="flex items-center gap-2 px-2.5 py-1 bg-[#111726] border border-emerald-500/30 rounded-lg text-xs font-mono text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>LIVE FIREBASE IoT • MONGODB LOGS</span>
+            <div className="hidden xl:block pl-2 border-l border-border">
+              <PlantSelector
+                activeFacilityId={activeFacilityId}
+                onSelectFacility={onSelectFacility}
+              />
             </div>
           </div>
 
-          {/* Right: Theme Toggle, Quick Emergency Stop & Profile */}
-          <div className="flex items-center gap-3">
-            
-            {/* Theme Toggle Button (Hematite Ore Forge <-> Obsidian Dark) */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111726] hover:bg-slate-800 text-slate-300 hover:text-amber-300 border border-[#1f293d] hover:border-amber-500/50 transition-all shadow-sm text-xs font-mono font-bold"
-              title={isHematite ? "Switch to Obsidian Dark Mode" : "Switch to Hematite Ore Forge Mode"}
-              aria-label="Toggle theme mode"
-            >
-              {isHematite ? (
-                <>
-                  <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                  <span className="hidden sm:inline text-amber-300">HEMATITE</span>
-                </>
-              ) : (
-                <>
-                  <Layers className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="hidden sm:inline text-slate-300">OBSIDIAN</span>
-                </>
-              )}
-            </button>
+          {/* Center: Plant Selector (for md/lg) + Live IoT Status + Quick Nav Links */}
+          <div className="hidden md:flex items-center gap-3 lg:gap-4">
+            <div className="xl:hidden">
+              <PlantSelector
+                activeFacilityId={activeFacilityId}
+                onSelectFacility={onSelectFacility}
+              />
+            </div>
 
-            {/* Quick Emergency Stop Button */}
+            <div className="flex items-center gap-2 px-3 py-1 bg-surface-sunken border border-emerald-500/30 rounded-lg text-xs font-mono text-emerald-400 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-semibold">IoT LIVE (ESP32 • 20Hz)</span>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/sensor-health')}
+              className="gap-1.5 text-xs font-mono h-8 px-3 border-border hover:border-cyan-500/40 text-foreground hover:text-cyan-400 hover:bg-cyan-500/10"
+              title="Inspect Transducer Health & Reliability Scores"
+            >
+              <Radio className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Sensor Health</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/digital-twin')}
+              className="gap-1.5 text-xs font-mono h-8 px-3 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+            >
+              <Boxes className="w-3.5 h-3.5" />
+              <span>3D Digital Twin</span>
+            </Button>
+          </div>
+
+          {/* Right: Theme Switcher, Emergency Stop, User Info & Logout */}
+          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+            
+            {/* Theme Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={cycleTheme}
+              title={`Active Theme: ${theme.toUpperCase()} (Click to toggle)`}
+              className="text-muted-foreground hover:text-foreground h-8 w-8 rounded-lg border border-border"
+            >
+              {theme === 'industrial' ? (
+                <Palette className="w-4 h-4 text-cyan-400" />
+              ) : theme === 'dark' ? (
+                <Moon className="w-4 h-4 text-sky-300" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-500" />
+              )}
+            </Button>
+
+            {/* Emergency Stop Button */}
             {!emergencyStatus?.emergencyStopActive && (
-              <button
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={() => setShowStopModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/90 hover:bg-red-600 text-white font-bold text-xs rounded-lg shadow-lg shadow-red-600/25 transition-all hover:scale-105 border border-red-400"
+                className="gap-1.5 font-mono font-bold uppercase tracking-wider text-[11px] px-3.5 h-8 shadow-sm border border-red-500/40"
               >
-                <AlertOctagon className="w-4 h-4" />
+                <AlertOctagon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">EMERGENCY STOP</span>
-              </button>
+                <span className="sm:hidden">E-STOP</span>
+              </Button>
             )}
 
             {/* Current User Pill */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-              <div className="hidden lg:block text-right">
-                <div className="text-xs font-semibold text-slate-200">
+            <div className="flex items-center gap-2.5 sm:gap-3 pl-2.5 sm:pl-4 border-l border-border">
+              <div className="hidden lg:block text-right min-w-0 max-w-[150px] xl:max-w-[200px]">
+                <div className="text-xs font-bold text-foreground truncate" title={currentUser?.displayName}>
                   {currentUser?.displayName || 'Control Operator'}
                 </div>
-                <div className="text-[10px] font-mono text-amber-400 font-medium">
+                <div className="text-[10px] font-mono text-cyan-400 truncate font-semibold">
                   {currentUser?.role?.replace('_', ' ') || 'OPERATOR'}
                 </div>
               </div>
 
-              <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sm" title={currentUser?.displayName}>
+              <div 
+                className="w-8 h-8 rounded-full bg-surface-elevated border border-border flex items-center justify-center text-xs shrink-0 shadow-xs cursor-default"
+                title={`${currentUser?.displayName || 'Operator'} (${currentUser?.role || 'Staff'})`}
+              >
                 {currentUser?.avatar || '👷‍♂️'}
               </div>
 
               {onLogout && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={onLogout}
                   title="Logout / Switch User"
-                  className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-slate-800 transition-colors"
+                  className="text-muted-foreground hover:text-red-400 h-8 w-8"
                 >
-                  <LogOut className="w-4 h-4" />
-                </button>
+                  <LogOut className="w-3.5 h-3.5" />
+                </Button>
               )}
             </div>
 
@@ -157,62 +209,65 @@ export default function Navbar({
       </header>
 
       {/* Emergency Stop Confirmation Modal */}
-      {showStopModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#111726] border-2 border-red-500 rounded-xl max-w-md w-full p-6 shadow-2xl shadow-red-950 glow-border-red">
-            <div className="flex items-center gap-3 text-red-400 mb-4">
-              <div className="p-3 bg-red-950/80 rounded-xl border border-red-500/50">
-                <AlertOctagon className="w-8 h-8 text-red-500 animate-pulse" />
+      <Dialog open={showStopModal} onOpenChange={setShowStopModal}>
+        <DialogContent className="max-w-md bg-surface border-red-500/80">
+          <DialogHeader>
+            <div className="flex items-center gap-2.5 text-destructive mb-1">
+              <div className="p-2 bg-red-950/80 rounded-md border border-red-500/50">
+                <AlertOctagon className="w-6 h-6 text-red-500 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white uppercase tracking-wide">
+                <DialogTitle className="text-base font-bold text-foreground uppercase tracking-wide">
                   Initiate Emergency Stop
-                </h3>
-                <p className="text-xs text-red-300">
-                  This action immediately halts conveyor line CV-101 motor drives across all substations.
-                </p>
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground font-mono">
+                  Halts conveyor motor drives across all substations immediately.
+                </DialogDescription>
               </div>
             </div>
+          </DialogHeader>
 
-            <div className="space-y-3 mb-5">
-              <label className="block text-xs font-semibold text-slate-300">
-                Reason for Emergency Interlock:
-              </label>
-              <select
-                value={stopReason}
-                onChange={(e) => setStopReason(e.target.value)}
-                className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-xs text-slate-200 focus:border-red-500 focus:outline-none"
-              >
-                <option value="Critical Splice Joint Rupture Detected">Critical Splice Joint Rupture Detected</option>
-                <option value="Longitudinal Belt Rip / Steel Cord Penetration">Longitudinal Belt Rip / Steel Cord Penetration</option>
-                <option value="Drive Pulley Thermal Hotspot Overheat (>85°C)">Drive Pulley Thermal Hotspot Overheat (&gt;85°C)</option>
-                <option value="Hopper Chute Severe Material Jam / Overload">Hopper Chute Severe Material Jam / Overload</option>
-                <option value="Manual Operator Precautionary Stop">Manual Operator Precautionary Stop</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowStopModal(false)}
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleTriggerEStop}
-                disabled={isSubmitting}
-                className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-red-600/40 transition-all flex items-center gap-1.5"
-              >
-                <AlertOctagon className="w-4 h-4" />
-                {isSubmitting ? 'Halting Line...' : 'CONFIRM EMERGENCY HALT'}
-              </button>
-            </div>
+          <div className="space-y-2 py-2">
+            <Label className="text-xs font-semibold text-foreground">
+              Reason for Emergency Interlock:
+            </Label>
+            <select
+              value={stopReason}
+              onChange={(e) => setStopReason(e.target.value)}
+              className="w-full bg-surface-sunken border border-border rounded-md px-3 py-2 text-xs text-foreground focus:border-red-500 focus:outline-none font-mono"
+            >
+              <option value="Critical Splice Joint Rupture Detected">Critical Splice Joint Rupture Detected</option>
+              <option value="Longitudinal Belt Rip / Steel Cord Penetration">Longitudinal Belt Rip / Steel Cord Penetration</option>
+              <option value="Drive Pulley Thermal Hotspot Overheat (>85°C)">Drive Pulley Thermal Hotspot Overheat (&gt;85°C)</option>
+              <option value="Hopper Chute Severe Material Jam / Overload">Hopper Chute Severe Material Jam / Overload</option>
+              <option value="Manual Operator Precautionary Stop">Manual Operator Precautionary Stop</option>
+            </select>
           </div>
-        </div>
-      )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowStopModal(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={handleTriggerEStop}
+              disabled={isSubmitting}
+              className="gap-1.5 font-bold uppercase"
+            >
+              <AlertOctagon className="w-3.5 h-3.5" />
+              {isSubmitting ? 'Halting Line...' : 'CONFIRM EMERGENCY HALT'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

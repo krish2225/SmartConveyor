@@ -1,43 +1,41 @@
 import React from 'react';
-import clsx from 'clsx';
+import { Badge } from '../ui/badge.jsx';
+import { cn } from '../../lib/utils.js';
 
 export default function StatusBadge({ status, label, size = 'sm', className = '' }) {
-  const getStyle = () => {
+  const getVariant = () => {
     switch (status?.toUpperCase()) {
       case 'CRITICAL':
       case 'CRITICAL_DELAMINATION':
       case 'FAULTY':
       case 'ACTIVE':
-        return 'bg-red-500/10 text-red-400 border-red-500/40';
+        return 'critical';
       case 'WARNING':
       case 'ELEVATED_WEAR':
       case 'DEGRADED':
       case 'ACKNOWLEDGED':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/40';
+        return 'warning';
       case 'OPTIMAL':
       case 'HEALTHY':
       case 'RESOLVED':
       case 'NOMINAL':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40';
+        return 'nominal';
       case 'INFO':
       default:
-        return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/40';
+        return 'cyan';
     }
   };
 
   const displayText = label || status?.replace(/_/g, ' ') || 'NOMINAL';
 
   return (
-    <span
-      className={clsx(
-        'inline-flex items-center gap-1.5 font-mono uppercase tracking-wider font-semibold rounded-full border',
-        size === 'xs' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs',
-        getStyle(),
-        className
-      )}
+    <Badge
+      variant={getVariant()}
+      size={size === 'xs' ? 'sm' : 'default'}
+      className={cn('inline-flex items-center gap-1.5 font-mono tracking-wider', className)}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-      {displayText}
-    </span>
+      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse shrink-0" />
+      <span>{displayText}</span>
+    </Badge>
   );
 }

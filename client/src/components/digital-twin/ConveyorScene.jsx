@@ -1,8 +1,14 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useThreeScene } from './useThreeScene.js';
 import StatusBadge from '../shared/StatusBadge.jsx';
 import { getJointStatusColor } from '../../utils/colorMapping.js';
 import { getAllJointsHistoryApi } from '../../services/api.js';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { Button } from '../ui/button.jsx';
+import { Slider } from '../ui/slider.jsx';
+import { Progress } from '../ui/progress.jsx';
+import { Separator } from '../ui/separator.jsx';
 import {
   Layers,
   Activity,
@@ -13,19 +19,16 @@ import {
   Play,
   Pause,
   Camera,
-  Eye,
-  Crosshair,
   RotateCcw,
   FastForward,
   Rewind,
   History,
   TrendingUp,
   TrendingDown,
-  Minus,
   Sparkles,
   Calendar
 } from 'lucide-react';
-import clsx from 'clsx';
+import { cn } from '../../lib/utils.js';
 
 export default function ConveyorScene({
   joints = [],
@@ -74,7 +77,7 @@ export default function ConveyorScene({
     return () => { isMounted = false; };
   }, [facilityId]);
 
-  // Group history records by jointId for instant $O(1)$ sparklines & lookup
+  // Group history records by jointId for instant $O(1)$ lookup
   const historyByJoint = useMemo(() => {
     const map = {};
     historyData.forEach(item => {
@@ -103,7 +106,6 @@ export default function ConveyorScene({
         return joints.find(j => j.jointId === jId) || { jointId: jId, healthStatus: 'OPTIMAL' };
       }
 
-      // Binary search or closest timestamp lookup
       let closest = list[0];
       let minDiff = Math.abs(list[0].timeMs - currentPlaybackTime);
 
@@ -113,7 +115,7 @@ export default function ConveyorScene({
           minDiff = diff;
           closest = list[i];
         } else {
-          break; // list is sorted, so differences will only grow
+          break;
         }
       }
 
@@ -146,7 +148,7 @@ export default function ConveyorScene({
   const selectedJoint = activeDisplayJoints.find(j => j.jointId === selectedJointId) || activeDisplayJoints[0];
   const jointTheme = getJointStatusColor(selectedJoint?.healthStatus);
 
-  // Compute trend (improving, degrading, stable) at current scrubbed position
+  // Compute trend at current scrubbed position
   const selectedJointTrend = useMemo(() => {
     if (!selectedJoint || !historyByJoint[selectedJoint.jointId]) return { dir: 'stable', delta: 0 };
     const list = historyByJoint[selectedJoint.jointId];
@@ -174,8 +176,6 @@ export default function ConveyorScene({
       const deltaSec = (nowTime - lastFrameTime) / 1000;
       lastFrameTime = nowTime;
 
-      // 72 hours (259,200 seconds). At 20x, play 72h in ~15-20s -> timeScale = 14400
-      // At 5x -> ~60s, at 1x -> ~300s
       const timeScale = 14400 * (playbackSpeed / 20);
       const advanceMs = deltaSec * timeScale * 1000;
 
@@ -221,7 +221,7 @@ export default function ConveyorScene({
 
   const getRelativeHoursAgo = (timeMs) => {
     const diffHours = ((timeRange.max - timeMs) / (3600 * 1000)).toFixed(1);
-    return diffHours === '0.0' ? 'NOW (Real-Time)' : `-${diffHours}h ago`;
+    return diffHours === '0.0' ? 'NOW (Live)' : `-${diffHours}h ago`;
   };
 
   // Sparkline generator for selected joint
@@ -231,7 +231,7 @@ export default function ConveyorScene({
     if (list.length < 2) return '';
 
     const width = 260;
-    const height = 40;
+    const height = 36;
     const padding = 2;
 
     const pts = list.map((item, i) => {
@@ -243,7 +243,6 @@ export default function ConveyorScene({
     return pts.join(' ');
   }, [selectedJoint, historyByJoint]);
 
-  // Scrubber needle position on sparkline (0% to 100%)
   const scrubberPercentage = useMemo(() => {
     const range = timeRange.max - timeRange.min;
     if (range <= 0) return 100;
@@ -255,41 +254,41 @@ export default function ConveyorScene({
     <div className="space-y-3">
       
       {/* 1. Main 3D WebGL Viewport Container */}
-      <div className="relative w-full h-[600px] bg-[#090c13] rounded-2xl border border-[#1f293d] overflow-hidden flex flex-col lg:flex-row shadow-2xl">
+      <div className="relative w-full h-[560px] bg-[#090D12] rounded-md border border-border overflow-hidden flex flex-col lg:flex-row shadow-2xl">
         
         {/* Left / Center 3D WebGL Canvas */}
         <div className="relative flex-1 h-full">
           <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
           {/* Top Floating Bar: Live / Replay Banner + Joint Selectors */}
-          <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+          <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2.5 pointer-events-none">
             
             {/* Live vs Replay Mode Indicator */}
             {isPlaybackMode ? (
-              <div className="flex items-center gap-2 pointer-events-auto bg-[#1a1208]/95 backdrop-blur-md border border-amber-500/50 rounded-xl px-3.5 py-2 text-xs shadow-2xl animate-fade-in">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-                <span className="font-bold text-amber-300 font-mono flex items-center gap-1.5">
+              <div className="flex items-center gap-2 pointer-events-auto bg-surface-elevated/95 backdrop-blur-md border border-amber-500/50 rounded-md px-3 py-1.5 text-xs shadow-xl animate-fade-in">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                <span className="font-bold text-amber-300 font-mono flex items-center gap-1">
                   <History className="w-3.5 h-3.5 text-amber-400" />
                   REPLAY MODE
                 </span>
-                <span className="text-slate-600 font-mono">|</span>
-                <span className="text-amber-200 font-mono text-[11px]">{getRelativeHoursAgo(currentPlaybackTime)}</span>
-                <span className="text-slate-600 font-mono">|</span>
-                <span className="text-slate-300 font-mono text-[11px]">{playbackSpeed}x Speed</span>
+                <span className="text-border">|</span>
+                <span className="text-amber-200 font-mono text-[11px] tabular-nums">{getRelativeHoursAgo(currentPlaybackTime)}</span>
+                <span className="text-border">|</span>
+                <span className="text-muted-foreground font-mono text-[11px]">{playbackSpeed}x Speed</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 pointer-events-auto bg-[#0c101a]/90 backdrop-blur-md border border-[#1f293d] rounded-xl px-3.5 py-2 text-xs shadow-xl">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-bold text-white font-mono">LIVE MONITORING</span>
-                <span className="text-slate-600 font-mono">|</span>
-                <span className="text-cyan-300 font-mono text-[11px]">{beltSpeedMps} m/s</span>
-                <span className="text-slate-600 font-mono">|</span>
-                <span className="text-orange-400 font-mono text-[11px]">{dynamicLoadTph} t/h</span>
+              <div className="flex items-center gap-2 pointer-events-auto bg-surface/90 backdrop-blur-md border border-border rounded-md px-3 py-1.5 text-xs shadow-xl">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-bold text-foreground font-mono">LIVE MONITORING</span>
+                <span className="text-border">|</span>
+                <span className="text-cyan-300 font-mono text-[11px] tabular-nums">{beltSpeedMps} m/s</span>
+                <span className="text-border">|</span>
+                <span className="text-orange-400 font-mono text-[11px] tabular-nums">{dynamicLoadTph} t/h</span>
               </div>
             )}
 
             {/* Quick Joint Selector Bar */}
-            <div className="flex items-center gap-1.5 pointer-events-auto bg-[#0c101a]/90 backdrop-blur-md border border-[#1f293d] rounded-xl p-1.5 shadow-xl">
+            <div className="flex items-center gap-1 pointer-events-auto bg-surface/90 backdrop-blur-md border border-border rounded-md p-1 shadow-xl">
               {activeDisplayJoints.map(joint => {
                 const isSelected = joint.jointId === selectedJointId;
                 const isCritical = joint.healthStatus === 'CRITICAL_DELAMINATION' || joint.healthStatus === 'critical';
@@ -299,18 +298,18 @@ export default function ConveyorScene({
                   <button
                     key={joint.jointId}
                     onClick={() => onSelectJoint(joint.jointId)}
-                    className={clsx(
-                      'px-2.5 py-1 text-xs font-mono font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer',
+                    className={cn(
+                      'px-2 py-0.5 text-xs font-mono font-semibold rounded transition-all flex items-center gap-1 cursor-pointer select-none',
                       isSelected
-                        ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
-                        : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                        ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                        : 'bg-surface-sunken text-muted-foreground hover:text-foreground hover:bg-muted'
                     )}
                   >
-                    <span className={clsx(
+                    <span className={cn(
                       'w-1.5 h-1.5 rounded-full',
                       isCritical ? 'bg-red-400 animate-ping' : (isWarning ? 'bg-amber-400' : 'bg-emerald-400')
                     )} />
-                    {joint.jointId.replace('Joint-', 'J-')}
+                    <span>{joint.jointId.replace('Joint-', 'J-')}</span>
                   </button>
                 );
               })}
@@ -318,9 +317,9 @@ export default function ConveyorScene({
           </div>
 
           {/* Camera Presets (Floating on Bottom Left) */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-[#0c101a]/90 backdrop-blur-md border border-[#1f293d] rounded-xl p-1.5 pointer-events-auto shadow-xl">
-            <span className="text-[10px] font-mono text-slate-500 uppercase px-2 flex items-center gap-1">
-              <Camera className="w-3 h-3 text-cyan-400" /> Views:
+          <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-surface/90 backdrop-blur-md border border-border rounded-md p-1 pointer-events-auto shadow-xl">
+            <span className="text-[10px] font-mono text-muted-foreground uppercase px-1.5 flex items-center gap-1">
+              <Camera className="w-3 h-3 text-primary" /> View:
             </span>
 
             {[
@@ -333,11 +332,11 @@ export default function ConveyorScene({
               <button
                 key={v.id}
                 onClick={() => setCameraMode(v.id)}
-                className={clsx(
-                  'px-2.5 py-1 text-xs font-mono rounded-lg transition-all cursor-pointer',
+                className={cn(
+                  'px-2 py-0.5 text-[11px] font-mono rounded transition-all cursor-pointer select-none',
                   cameraMode === v.id
-                    ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    ? 'bg-primary text-primary-foreground font-bold shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                 )}
               >
                 {v.label}
@@ -349,87 +348,79 @@ export default function ConveyorScene({
 
         {/* Right Side: Splice Joint Inspector Panel */}
         {selectedJoint && (
-          <div className="w-full lg:w-80 h-auto lg:h-full bg-[#0c101a]/95 border-t lg:border-t-0 lg:border-l border-[#1f293d] p-5 flex flex-col justify-between overflow-y-auto shrink-0 shadow-2xl">
+          <div className="w-full lg:w-80 h-auto lg:h-full bg-surface border-t lg:border-t-0 lg:border-l border-border p-4 flex flex-col justify-between overflow-y-auto shrink-0 shadow-2xl">
             
-            <div className="space-y-4">
-              {/* Header with Live vs Playback Status */}
+            <div className="space-y-3">
+              {/* Header with Diagnostic Status */}
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-wider font-semibold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-cyan-400" />
+                  <span className="text-[10px] font-mono text-primary uppercase tracking-wider font-semibold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-primary" />
                     {isPlaybackMode ? 'Historical Diagnostic' : 'Splice Diagnostic'}
                   </span>
                   <StatusBadge status={selectedJoint.healthStatus} size="xs" />
                 </div>
-                <h3 className="text-lg font-bold text-white mt-1">
+                <h3 className="text-sm font-bold text-foreground mt-1">
                   {selectedJoint.name || selectedJoint.jointId}
                 </h3>
-                <p className="text-xs text-slate-400 font-mono mt-0.5">
-                  Position: {selectedJoint.positionMeters}m / 1200m
+                <p className="text-[11px] text-muted-foreground font-mono">
+                  Location: <strong className="text-foreground">{selectedJoint.positionMeters}m</strong> / 1200m Belt Loop
                 </p>
               </div>
 
               {/* RUL & Risk Score Card with Trend Arrow */}
-              <div className={clsx('p-3.5 rounded-xl border space-y-2', jointTheme.bg, jointTheme.border)}>
+              <div className="p-3 rounded-md bg-surface-sunken border border-border space-y-2">
                 <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-300 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-cyan-400" />
+                  <span className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
                     Estimated RUL
                   </span>
                   <div className="flex items-center gap-1.5">
-                    <span className={clsx('font-bold', jointTheme.text)}>
-                      {selectedJoint.estimatedTimeToFailureDays} Days
+                    <span className="font-bold text-foreground tabular-nums">
+                      {selectedJoint.estimatedTimeToFailureDays} Days ({Math.round((selectedJoint.estimatedTimeToFailureDays || 6) * 24)}h)
                     </span>
-                    {/* Trend Arrow */}
                     {selectedJointTrend.dir === 'worsening' && (
-                      <span className="text-rose-400 text-[10px] font-bold flex items-center" title={`Degrading (-${selectedJointTrend.delta}% in health)`}>
-                        <TrendingDown className="w-3.5 h-3.5" /> ↘
+                      <span className="text-red-400 text-[10px] font-bold flex items-center" title="Degrading">
+                        <TrendingDown className="w-3 h-3" />
                       </span>
                     )}
                     {selectedJointTrend.dir === 'improving' && (
                       <span className="text-emerald-400 text-[10px] font-bold flex items-center" title="Improving">
-                        <TrendingUp className="w-3.5 h-3.5" /> ↗
-                      </span>
-                    )}
-                    {selectedJointTrend.dir === 'stable' && (
-                      <span className="text-slate-400 text-[10px]" title="Stable health">
-                        →
+                        <TrendingUp className="w-3 h-3" />
                       </span>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
+                  <div className="flex justify-between text-[10px] font-mono text-muted-foreground mb-1">
                     <span>Rupture Risk Index</span>
-                    <span className="font-bold text-white">{selectedJoint.riskScore}%</span>
+                    <span className="font-bold text-foreground tabular-nums">{selectedJoint.riskScore}%</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className={clsx('h-full transition-all duration-300', selectedJoint.riskScore >= 70 ? 'bg-red-500' : (selectedJoint.riskScore >= 35 ? 'bg-amber-500' : 'bg-emerald-500'))}
-                      style={{ width: `${selectedJoint.riskScore}%` }}
-                    />
-                  </div>
+                  <Progress
+                    value={selectedJoint.riskScore}
+                    indicatorClassName={selectedJoint.riskScore >= 70 ? 'bg-red-500' : (selectedJoint.riskScore >= 35 ? 'bg-amber-500' : 'bg-emerald-500')}
+                  />
                 </div>
               </div>
 
               {/* 72-Hour Health Degradation Sparkline */}
               {historyByJoint[selectedJoint.jointId] && (
-                <div className="p-3 bg-[#111726] border border-[#1f293d] rounded-xl space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-                    <span className="flex items-center gap-1 font-semibold text-cyan-400">
-                      <Activity className="w-3 h-3 text-cyan-400" />
-                      72h Health Trajectory
+                <div className="p-2.5 bg-surface-sunken border border-border rounded-md space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+                    <span className="flex items-center gap-1 font-semibold text-primary">
+                      <Activity className="w-3 h-3 text-primary" />
+                      72h Health Curve
                     </span>
-                    <span>Health: {selectedJoint.healthScore || Math.round(100 - (selectedJoint.riskScore || 0))}%</span>
+                    <span className="tabular-nums">Health: {selectedJoint.healthScore || Math.round(100 - (selectedJoint.riskScore || 0))}%</span>
                   </div>
 
-                  <div className="relative h-10 w-full bg-[#0a0d14] rounded-lg border border-[#1f293d]/80 overflow-hidden flex items-center justify-center">
-                    <svg className="w-full h-full p-1" viewBox="0 0 260 40" preserveAspectRatio="none">
+                  <div className="relative h-9 w-full bg-background rounded border border-border/80 overflow-hidden flex items-center justify-center">
+                    <svg className="w-full h-full p-1" viewBox="0 0 260 36" preserveAspectRatio="none">
                       <polyline
                         fill="none"
-                        stroke="#06b6d4"
-                        strokeWidth="2"
+                        stroke="#22D3EE"
+                        strokeWidth="1.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         points={sparklinePoints}
@@ -442,7 +433,7 @@ export default function ConveyorScene({
                         className="absolute top-0 bottom-0 w-0.5 bg-amber-400 shadow-md shadow-amber-400/50 transition-all duration-75"
                         style={{ left: `${scrubberPercentage}%` }}
                       >
-                        <div className="w-2 h-2 rounded-full bg-amber-400 -translate-x-[3px] -translate-y-0.5 shadow-sm" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 -translate-x-[2px] -translate-y-0.5" />
                       </div>
                     )}
                   </div>
@@ -450,68 +441,68 @@ export default function ConveyorScene({
               )}
 
               {/* Physical Transducer Array */}
-              <div className="space-y-2">
-                <div className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-semibold">
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider font-bold">
                   Splice Transducer State
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   
-                  {/* Ultrasonic Splice Thickness */}
-                  <div className="p-2.5 bg-[#111726] border border-[#1f293d] rounded-lg">
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-                      <Layers className="w-3 h-3 text-cyan-400" />
+                  {/* Ultrasonic Thickness */}
+                  <div className="p-2 bg-surface-sunken border border-border rounded">
+                    <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
+                      <Layers className="w-3 h-3 text-primary" />
                       Thickness
                     </div>
-                    <div className="text-sm font-bold font-mono text-white mt-1">
+                    <div className="text-xs font-bold font-mono text-foreground mt-0.5 tabular-nums">
                       {selectedJoint.ultrasonicThickness} mm
                     </div>
-                    <div className="text-[10px] text-slate-400">&lt;18.5mm Critical</div>
+                    <div className="text-[9px] text-muted-foreground font-mono">&lt;18.5mm Limit</div>
                   </div>
 
                   {/* Thermal Core */}
-                  <div className="p-2.5 bg-[#111726] border border-[#1f293d] rounded-lg">
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
+                  <div className="p-2 bg-surface-sunken border border-border rounded">
+                    <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
                       <Thermometer className="w-3 h-3 text-amber-400" />
                       Thermal Core
                     </div>
-                    <div className="text-sm font-bold font-mono text-white mt-1">
+                    <div className="text-xs font-bold font-mono text-foreground mt-0.5 tabular-nums">
                       {selectedJoint.temperature} °C
                     </div>
-                    <div className="text-[10px] text-slate-400">&gt;65°C Elevated</div>
+                    <div className="text-[9px] text-muted-foreground font-mono">&gt;65°C Elevated</div>
                   </div>
 
                   {/* Vibration */}
-                  <div className="p-2.5 bg-[#111726] border border-[#1f293d] rounded-lg">
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
-                      <Activity className="w-3 h-3 text-cyan-400" />
+                  <div className="p-2 bg-surface-sunken border border-border rounded">
+                    <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
+                      <Activity className="w-3 h-3 text-primary" />
                       Vibration
                     </div>
-                    <div className="text-sm font-bold font-mono text-white mt-1">
+                    <div className="text-xs font-bold font-mono text-foreground mt-0.5 tabular-nums">
                       {selectedJoint.vibrationRms} mm/s
                     </div>
-                    <div className="text-[10px] text-slate-400">ISO 10816 Limit</div>
+                    <div className="text-[9px] text-muted-foreground font-mono">ISO 10816 Zone</div>
                   </div>
 
                   {/* Acoustic Stress */}
-                  <div className="p-2.5 bg-[#111726] border border-[#1f293d] rounded-lg">
-                    <div className="flex items-center gap-1 text-slate-400 text-[10px] font-mono">
+                  <div className="p-2 bg-surface-sunken border border-border rounded">
+                    <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-mono">
                       <Radio className="w-3 h-3 text-pink-400" />
-                      Acoustic Stress
+                      Acoustic
                     </div>
-                    <div className="text-sm font-bold font-mono text-white mt-1">
+                    <div className="text-xs font-bold font-mono text-foreground mt-0.5 tabular-nums">
                       {selectedJoint.acousticEmission} dB
                     </div>
-                    <div className="text-[10px] text-slate-400">Delamination wave</div>
+                    <div className="text-[9px] text-muted-foreground font-mono">Delam. Wave</div>
                   </div>
 
                 </div>
               </div>
 
               {/* Maintenance Prescription */}
-              <div className="p-3 bg-[#111726] border border-[#1f293d] rounded-xl text-xs space-y-1">
-                <div className="flex items-center gap-1.5 text-cyan-400 font-mono text-[11px] font-semibold">
-                  <Wrench className="w-3.5 h-3.5" />
+              <div className="p-2.5 bg-surface-sunken border border-border rounded-md text-xs space-y-1">
+                <div className="flex items-center gap-1.5 text-primary font-mono text-[10px] font-bold">
+                  <Wrench className="w-3 h-3" />
                   Prescription Note
                 </div>
                 <p className="text-slate-300 text-[11px] leading-relaxed">
@@ -522,9 +513,9 @@ export default function ConveyorScene({
             </div>
 
             {/* Footer Status */}
-            <div className="mt-4 pt-3 border-t border-[#1f293d] flex items-center justify-between text-[10px] font-mono text-slate-400">
-              <span>{isPlaybackMode ? 'Replay Snapshot' : 'Live Stream'}</span>
-              <span className="text-cyan-400 font-bold">{selectedJoint.healthStatus}</span>
+            <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+              <span>{isPlaybackMode ? 'Replay Snapshot' : 'Live Transducer Stream'}</span>
+              <span className="text-primary font-bold">{selectedJoint.healthStatus}</span>
             </div>
 
           </div>
@@ -532,31 +523,30 @@ export default function ConveyorScene({
 
       </div>
 
-      {/* 2. HISTORICAL PLAYBACK SCRUBBER CONTROL BAR (Attached directly below 3D viewport) */}
-      <div className="p-4 bg-[#0c101a]/95 border border-[#1f293d] rounded-2xl shadow-xl space-y-3">
+      {/* 2. HISTORICAL PLAYBACK SCRUBBER CONTROL BAR */}
+      <div className="p-3.5 bg-surface border border-border rounded-md shadow-xl space-y-2.5 select-none">
         
         {/* Top Header of Control Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
           
           {/* Mode Switcher: LIVE vs PLAYBACK */}
-          <div className="flex items-center gap-2">
-            <button
+          <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant={!isPlaybackMode ? "nominal" : "outline"}
               onClick={() => {
                 setIsPlaybackMode(false);
                 setIsPlaying(false);
               }}
-              className={clsx(
-                'px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer',
-                !isPlaybackMode
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
-                  : 'bg-[#111726] text-slate-400 hover:text-white border border-[#1f293d]'
-              )}
+              className="font-mono text-[11px] gap-1.5 font-bold"
             >
-              <span className={clsx('w-2 h-2 rounded-full', !isPlaybackMode ? 'bg-slate-950' : 'bg-emerald-400 animate-pulse')} />
-              LIVE MODE
-            </button>
+              <span className={cn('w-2 h-2 rounded-full', !isPlaybackMode ? 'bg-white' : 'bg-emerald-400 animate-pulse')} />
+              LIVE STREAM
+            </Button>
 
-            <button
+            <Button
+              size="sm"
+              variant={isPlaybackMode ? "warning" : "outline"}
               onClick={() => {
                 setIsPlaybackMode(true);
                 setIsPlaying(false);
@@ -564,99 +554,94 @@ export default function ConveyorScene({
                   setCurrentPlaybackTime(timeRange.min);
                 }
               }}
-              className={clsx(
-                'px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer',
-                isPlaybackMode
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
-                  : 'bg-[#111726] text-slate-400 hover:text-white border border-[#1f293d]'
-              )}
+              className="font-mono text-[11px] gap-1.5 font-bold"
             >
               <History className="w-3.5 h-3.5" />
               HISTORICAL PLAYBACK
-            </button>
+            </Button>
           </div>
 
           {/* Current Scrubber Timestamp Display */}
-          <div className="flex items-center gap-2 font-mono text-xs bg-[#111726] border border-[#1f293d] px-3.5 py-1.5 rounded-xl text-slate-300">
-            <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-white font-bold">
+          <div className="flex items-center gap-2 font-mono text-xs bg-surface-sunken border border-border px-3 py-1 rounded text-foreground">
+            <Calendar className="w-3.5 h-3.5 text-primary" />
+            <span className="font-bold tabular-nums">
               {formatPlaybackTime(isPlaybackMode ? currentPlaybackTime : Date.now())}
             </span>
-            <span className="text-slate-500">|</span>
-            <span className={clsx('font-semibold', isPlaybackMode ? 'text-amber-400' : 'text-emerald-400')}>
+            <span className="text-border">|</span>
+            <span className={cn('font-semibold text-[11px]', isPlaybackMode ? 'text-amber-400' : 'text-emerald-400')}>
               {isPlaybackMode ? getRelativeHoursAgo(currentPlaybackTime) : 'Streaming 20Hz'}
             </span>
           </div>
 
           {/* Speed & Playback Controls */}
           {isPlaybackMode && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {/* Rewind to Start */}
-              <button
+              <Button
+                variant="outline"
+                size="icon-sm"
                 onClick={() => {
                   setCurrentPlaybackTime(timeRange.min);
                   setIsPlaying(false);
                 }}
-                className="p-2 bg-[#111726] hover:bg-slate-800 border border-[#1f293d] rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title="Rewind to 72 Hours Ago"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-              </button>
+              </Button>
 
               {/* Step Back 2 hours */}
-              <button
+              <Button
+                variant="outline"
+                size="icon-sm"
                 onClick={() => {
                   setCurrentPlaybackTime(prev => Math.max(timeRange.min, prev - 2 * 3600 * 1000));
                   setIsPlaying(false);
                 }}
-                className="p-2 bg-[#111726] hover:bg-slate-800 border border-[#1f293d] rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title="Step Back 2h"
               >
                 <Rewind className="w-3.5 h-3.5" />
-              </button>
+              </Button>
 
               {/* Play / Pause Toggle */}
-              <button
+              <Button
+                variant={isPlaying ? "warning" : "default"}
+                size="sm"
                 onClick={() => {
                   if (currentPlaybackTime >= timeRange.max) {
                     setCurrentPlaybackTime(timeRange.min);
                   }
                   setIsPlaying(!isPlaying);
                 }}
-                className={clsx(
-                  'px-3.5 py-1.5 rounded-xl font-mono text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md',
-                  isPlaying
-                    ? 'bg-amber-500 text-slate-950 shadow-amber-500/20'
-                    : 'bg-cyan-500 text-slate-950 shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-500'
-                )}
+                className="font-mono text-xs font-bold gap-1.5"
               >
                 {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                 <span>{isPlaying ? 'PAUSE' : 'PLAY'}</span>
-              </button>
+              </Button>
 
               {/* Step Forward 2 hours */}
-              <button
+              <Button
+                variant="outline"
+                size="icon-sm"
                 onClick={() => {
                   setCurrentPlaybackTime(prev => Math.min(timeRange.max, prev + 2 * 3600 * 1000));
                   setIsPlaying(false);
                 }}
-                className="p-2 bg-[#111726] hover:bg-slate-800 border border-[#1f293d] rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title="Step Forward 2h"
               >
                 <FastForward className="w-3.5 h-3.5" />
-              </button>
+              </Button>
 
               {/* Speed Multipliers */}
-              <div className="flex items-center gap-1 bg-[#111726] border border-[#1f293d] rounded-xl p-1">
+              <div className="flex items-center gap-0.5 bg-surface-sunken border border-border rounded p-0.5">
                 {[1, 5, 20].map(sp => (
                   <button
                     key={sp}
                     onClick={() => setPlaybackSpeed(sp)}
-                    className={clsx(
-                      'px-2 py-0.5 text-xs font-mono rounded-lg font-bold transition-all cursor-pointer',
+                    className={cn(
+                      'px-1.5 py-0.5 text-[10px] font-mono rounded font-bold transition-all cursor-pointer',
                       playbackSpeed === sp
-                        ? 'bg-amber-500 text-slate-950 shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                        ? 'bg-amber-500 text-black shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
                     {sp}x
@@ -665,51 +650,50 @@ export default function ConveyorScene({
               </div>
 
               {/* Snap to Now Button */}
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setCurrentPlaybackTime(timeRange.max);
                   setIsPlaying(false);
                   setIsPlaybackMode(false);
                 }}
-                className="px-2.5 py-1.5 bg-[#111726] hover:bg-emerald-950/60 border border-[#1f293d] hover:border-emerald-500/50 rounded-xl text-xs font-mono text-emerald-400 font-semibold transition-colors cursor-pointer"
-                title="Snap to Current Live State"
+                className="text-emerald-400 font-mono text-[11px] border-emerald-500/30 hover:border-emerald-500/60"
               >
                 Snap Live
-              </button>
+              </Button>
             </div>
           )}
 
         </div>
 
         {/* Horizontal Timeline Scrubber Slider */}
-        <div className="space-y-1.5 pt-1">
-          <div className="relative flex items-center">
-            <input
-              type="range"
-              min={timeRange.min}
-              max={timeRange.max}
-              step={1000 * 60 * 15} // 15-minute resolution
-              value={isPlaybackMode ? currentPlaybackTime : timeRange.max}
-              disabled={!isPlaybackMode}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                setCurrentPlaybackTime(val);
-                setIsPlaying(false);
-              }}
-              className={clsx(
-                'w-full h-2 rounded-lg appearance-none cursor-pointer transition-all',
-                isPlaybackMode
-                  ? 'bg-slate-800 accent-amber-400 hover:accent-amber-300'
-                  : 'bg-slate-800/50 accent-emerald-500 opacity-60 cursor-not-allowed'
-              )}
-            />
-          </div>
+        <div className="space-y-1 pt-1">
+          <input
+            type="range"
+            min={timeRange.min}
+            max={timeRange.max}
+            step={1000 * 60 * 15}
+            value={isPlaybackMode ? currentPlaybackTime : timeRange.max}
+            disabled={!isPlaybackMode}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              setCurrentPlaybackTime(val);
+              setIsPlaying(false);
+            }}
+            className={cn(
+              'w-full h-2 rounded-lg appearance-none cursor-pointer transition-all',
+              isPlaybackMode
+                ? 'bg-surface-sunken accent-amber-400 hover:accent-amber-300'
+                : 'bg-surface-sunken accent-emerald-500 opacity-60 cursor-not-allowed'
+            )}
+          />
 
           {/* Timeline Range Labels */}
-          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 px-1">
+          <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground px-0.5">
             <span>72 Hours Ago ({formatPlaybackTime(timeRange.min).split(',')[0]})</span>
             <span>48h Ago</span>
-            <span className="text-amber-400/80 font-semibold">24h Ago (Joint-05 Transition Zone)</span>
+            <span className="text-amber-400 font-semibold">24h Ago (Joint-05 Degradation Zone)</span>
             <span>12h Ago</span>
             <span className="text-emerald-400 font-bold">Now (Live)</span>
           </div>

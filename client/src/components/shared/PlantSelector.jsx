@@ -1,13 +1,17 @@
 import React from 'react';
 import { FACILITY_CONFIGS } from '../../../../shared/constants.js';
 import { changeActiveFacility } from '../../firebase/firestore.js';
-import { Building2, ChevronDown } from 'lucide-react';
+import { Building2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select.jsx';
 
 export default function PlantSelector({ activeFacilityId, onSelectFacility }) {
-  const current = FACILITY_CONFIGS[activeFacilityId] || Object.values(FACILITY_CONFIGS)[0];
-
-  const handleChange = (e) => {
-    const newId = e.target.value;
+  const handleValueChange = (newId) => {
     changeActiveFacility(newId);
     if (onSelectFacility) {
       onSelectFacility(newId);
@@ -15,23 +19,25 @@ export default function PlantSelector({ activeFacilityId, onSelectFacility }) {
   };
 
   return (
-    <div className="relative inline-flex items-center">
-      <div className="flex items-center gap-2 bg-[#111726] border border-[#1f293d] hover:border-cyan-500/50 transition-all rounded-lg px-3 py-1.5 text-xs text-slate-200">
-        <Building2 className="w-4 h-4 text-cyan-400 shrink-0" />
-        <select
-          value={activeFacilityId}
-          onChange={handleChange}
-          aria-label="Select Mining Complex and Conveyor Line"
-          className="bg-transparent text-slate-200 font-medium focus:outline-none cursor-pointer pr-4 appearance-none text-xs"
-        >
+    <div className="flex items-center gap-2">
+      <Select value={activeFacilityId} onValueChange={handleValueChange}>
+        <SelectTrigger className="w-[260px] h-8 bg-surface border-border text-foreground font-medium">
+          <div className="flex items-center gap-2 truncate">
+            <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+            <SelectValue placeholder="Select Facility" />
+          </div>
+        </SelectTrigger>
+        <SelectContent>
           {Object.values(FACILITY_CONFIGS).map(facility => (
-            <option key={facility.id} value={facility.id} className="bg-[#111726] text-slate-200">
-              {facility.shortName}
-            </option>
+            <SelectItem key={facility.id} value={facility.id}>
+              <div className="flex flex-col text-left">
+                <span className="font-semibold text-xs text-foreground">{facility.shortName}</span>
+                <span className="text-[10px] text-muted-foreground font-mono">{facility.plantName}</span>
+              </div>
+            </SelectItem>
           ))}
-        </select>
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
-      </div>
+        </SelectContent>
+      </Select>
     </div>
   );
 }

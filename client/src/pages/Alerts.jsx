@@ -1,30 +1,32 @@
 import React from 'react';
 import AlertsTable from '../components/alerts/AlertsTable.jsx';
-import { BellRing, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Badge } from '../components/ui/badge.jsx';
+import { BellRing } from 'lucide-react';
 
 export default function Alerts({
   facilityId = 'nmdc-kirandul-cv101',
   alerts = [],
-  currentUser
+  currentUser,
+  onAcknowledgeAlert
 }) {
   const activeCount = alerts.filter(a => a.status === 'ACTIVE').length;
   const acknowledgedCount = alerts.filter(a => a.status === 'ACKNOWLEDGED').length;
   const criticalCount = alerts.filter(a => a.severity === 'CRITICAL' && a.status === 'ACTIVE').length;
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in select-none">
       
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl text-slate-950 shadow-md">
+          <div className="p-1.5 bg-primary/10 border border-primary/30 rounded-lg text-primary shadow-xs">
             <BellRing className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
+            <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
               Real-Time Alarm &amp; Incident Console
             </h1>
-            <p className="text-xs text-slate-400 font-mono">
+            <p className="text-xs text-muted-foreground font-mono">
               Live Firestore Trigger Feed • Anomaly Verification &amp; Operator Acknowledgements
             </p>
           </div>
@@ -33,13 +35,13 @@ export default function Alerts({
         {/* Quick KPI stats */}
         <div className="flex items-center gap-2">
           {criticalCount > 0 && (
-            <span className="px-3 py-1 bg-red-950 text-red-300 border border-red-500/50 rounded-lg text-xs font-mono font-bold animate-pulse">
+            <Badge variant="critical" size="default" className="font-mono text-xs">
               ● {criticalCount} CRITICAL UNRESOLVED
-            </span>
+            </Badge>
           )}
-          <span className="px-3 py-1 bg-[#111726] text-slate-300 border border-[#1f293d] rounded-lg text-xs font-mono">
+          <Badge variant="secondary" size="default" className="font-mono text-xs">
             {activeCount} Active / {alerts.length} Total
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -48,6 +50,7 @@ export default function Alerts({
         alerts={alerts}
         facilityId={facilityId}
         currentUser={currentUser}
+        onAcknowledgeAlert={onAcknowledgeAlert}
       />
 
     </div>

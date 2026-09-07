@@ -1,18 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { getReportsApi, createReportApi } from '../../services/api.js';
 import {
-  FileSpreadsheet,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table.jsx';
+import { Card } from '../ui/card.jsx';
+import { Badge } from '../ui/badge.jsx';
+import { Button } from '../ui/button.jsx';
+import { Input } from '../ui/input.jsx';
+import { Label } from '../ui/label.jsx';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog.jsx';
+import {
   Download,
   Plus,
-  Calendar,
   Search,
   CheckCircle2,
-  FileText,
-  Clock,
-  Printer,
-  RefreshCw
+  FileText
 } from 'lucide-react';
-import clsx from 'clsx';
 
 export default function ReportsTable({
   facilityId = 'nmdc-kirandul-cv101',
@@ -97,170 +112,181 @@ export default function ReportsTable({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       
       {/* Top KPI Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d]">
-          <span className="text-[11px] font-mono text-slate-400 uppercase">Belt Uptime</span>
-          <div className="text-xl font-bold font-mono text-emerald-400 mt-1">99.42%</div>
-          <span className="text-[10px] text-slate-500 font-mono">Kirandul Complex Dep-14</span>
-        </div>
+        <Card className="p-3.5 bg-surface border-border">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Belt Uptime</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-400 mt-1 tabular-nums">99.42%</div>
+          <span className="text-[10px] text-muted-foreground font-mono">Kirandul Complex Dep-14</span>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d]">
-          <span className="text-[11px] font-mono text-slate-400 uppercase">MTTF (Mean Time)</span>
-          <div className="text-xl font-bold font-mono text-cyan-400 mt-1">3,480 hrs</div>
-          <span className="text-[10px] text-slate-500 font-mono">Steel Cord Splices</span>
-        </div>
+        <Card className="p-3.5 bg-surface border-border">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase font-bold">MTTF (Mean Time)</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-primary mt-1 tabular-nums">3,480 hrs</div>
+          <span className="text-[10px] text-muted-foreground font-mono">Steel Cord Splices</span>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d]">
-          <span className="text-[11px] font-mono text-slate-400 uppercase">MTTR (Repair Time)</span>
-          <div className="text-xl font-bold font-mono text-amber-400 mt-1">4.2 hrs</div>
-          <span className="text-[10px] text-slate-500 font-mono">Vulcanized Overhaul</span>
-        </div>
+        <Card className="p-3.5 bg-surface border-border">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase font-bold">MTTR (Repair Time)</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-amber-400 mt-1 tabular-nums">4.2 hrs</div>
+          <span className="text-[10px] text-muted-foreground font-mono">Vulcanized Overhaul</span>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-[#111726] border border-[#1f293d]">
-          <span className="text-[11px] font-mono text-slate-400 uppercase">Ore Hauled (MTD)</span>
-          <div className="text-xl font-bold font-mono text-orange-400 mt-1">1.84M Tons</div>
-          <span className="text-[10px] text-slate-500 font-mono">+65% Fe Grade</span>
-        </div>
+        <Card className="p-3.5 bg-surface border-border">
+          <span className="text-[10px] font-mono text-muted-foreground uppercase font-bold">Ore Hauled (MTD)</span>
+          <div className="text-xl sm:text-2xl font-bold font-mono text-orange-400 mt-1 tabular-nums">1.84M Tons</div>
+          <span className="text-[10px] text-muted-foreground font-mono">+65% Fe Grade</span>
+        </Card>
 
       </div>
 
       {/* Reports Table Header & Generator Button */}
-      <div className="bg-[#111726] border border-[#1f293d] rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+      <Card className="p-3 bg-surface border-border flex flex-wrap items-center justify-between gap-3">
         
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <Input
             type="text"
             placeholder="Search report archive by title, engineer..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
+            className="pl-9 h-8 text-xs font-mono"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportCSV}
             disabled={isExporting}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+            className="font-mono text-xs gap-1.5"
           >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <Download className="w-3.5 h-3.5 text-primary" />
             Export Live CSV
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="default"
+            size="sm"
             onClick={() => setShowGenerateModal(true)}
-            className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 transition-all"
+            className="font-mono text-xs gap-1.5 font-bold"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             Generate Custom Report
-          </button>
+          </Button>
         </div>
 
-      </div>
+      </Card>
 
       {/* Reports Table */}
-      <div className="bg-[#111726] border border-[#1f293d] rounded-2xl overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#0c101a] border-b border-[#1f293d] text-[11px] font-mono text-slate-400 uppercase tracking-wider">
-              <tr>
-                <th className="py-3.5 px-4">Report Title / ID</th>
-                <th className="py-3.5 px-4">Category</th>
-                <th className="py-3.5 px-4">Generated By</th>
-                <th className="py-3.5 px-4">Date / Time</th>
-                <th className="py-3.5 px-4">Tonnage</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
+      <Card className="bg-surface border-border overflow-hidden shadow-xl">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-surface-sunken hover:bg-surface-sunken">
+              <TableHead>Report Title / ID</TableHead>
+              <TableHead className="w-[140px]">Category</TableHead>
+              <TableHead className="w-[180px]">Generated By</TableHead>
+              <TableHead className="w-[160px]">Date / Time</TableHead>
+              <TableHead className="w-[130px]">Tonnage</TableHead>
+              <TableHead className="w-[110px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
 
-            <tbody className="divide-y divide-[#1f293d]/80">
-              {reportsList.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
-                    <CheckCircle2 className="w-6 h-6 text-slate-600 mx-auto mb-1" />
-                    No reports filed yet. Click "Generate Custom Report" to create a new compliance audit in MongoDB.
-                  </td>
-                </tr>
-              ) : (
-                reportsList.map(rep => (
-                  <tr key={rep.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2 font-bold text-white text-xs">
-                        <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
-                        <span>{rep.title}</span>
-                      </div>
-                      <span className="text-[10px] font-mono text-slate-400 pl-6">{rep.id}</span>
-                    </td>
+          <TableBody>
+            {reportsList.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground text-xs">
+                  <CheckCircle2 className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                  No reports filed yet. Click "Generate Custom Report" to create a new compliance audit in MongoDB.
+                </TableCell>
+              </TableRow>
+            ) : (
+              reportsList.map(rep => (
+                <TableRow key={rep.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2 font-bold text-foreground text-xs">
+                      <FileText className="w-4 h-4 text-primary shrink-0" />
+                      <span>{rep.title}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground pl-6">{rep.id}</span>
+                  </TableCell>
 
-                    <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-cyan-300">
-                      {rep.type}
-                    </td>
+                  <TableCell className="whitespace-nowrap font-mono text-[11px] text-primary font-semibold">
+                    {rep.type}
+                  </TableCell>
 
-                    <td className="py-4 px-4 whitespace-nowrap text-slate-300 text-xs">
-                      {rep.generatedBy}
-                    </td>
+                  <TableCell className="whitespace-nowrap text-slate-300 text-xs">
+                    {rep.generatedBy}
+                  </TableCell>
 
-                    <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-slate-400">
-                      {new Date(rep.generatedAt).toLocaleString([], {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
+                  <TableCell className="whitespace-nowrap font-mono text-[11px] text-muted-foreground tabular-nums">
+                    {new Date(rep.generatedAt).toLocaleString([], {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </TableCell>
 
-                    <td className="py-4 px-4 whitespace-nowrap font-mono text-[11px] text-orange-400">
-                      {rep.totalTonnage}
-                    </td>
+                  <TableCell className="whitespace-nowrap font-mono text-[11px] text-orange-400 tabular-nums">
+                    {rep.totalTonnage}
+                  </TableCell>
 
-                    <td className="py-4 px-4 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => handleExportCSV(rep)}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 text-[11px] font-mono inline-flex items-center gap-1"
-                      >
-                        <Download className="w-3 h-3" />
-                        Download
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  <TableCell className="text-right whitespace-nowrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExportCSV(rep)}
+                      className="h-6 px-2 text-[10px] font-mono gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      Download
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Card>
 
       {/* New Custom Report Modal */}
-      {showGenerateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-[#111726] border border-cyan-500/40 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2 text-cyan-400">
-              <FileSpreadsheet className="w-5 h-5" />
-              <h3 className="text-base font-bold text-white">Generate NMDC Compliance Report</h3>
-            </div>
+      <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
+        <DialogContent className="max-w-md bg-surface border-border">
+          <form onSubmit={handleGenerateReport} className="space-y-3.5">
+            <DialogHeader>
+              <div className="flex items-center gap-2 text-primary">
+                <FileText className="w-4 h-4" />
+                <DialogTitle className="text-sm font-bold text-foreground">
+                  Generate NMDC Compliance Report
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-xs text-muted-foreground font-mono">
+                Compile splice RUL, vibration, and thermal metrics for plant audit records.
+              </DialogDescription>
+            </DialogHeader>
 
-            <form onSubmit={handleGenerateReport} className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Report Heading:</label>
-                <input
+            <div className="space-y-2.5 text-xs">
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Report Heading:</Label>
+                <Input
                   type="text"
                   value={reportTitle}
                   onChange={(e) => setReportTitle(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-200 text-xs focus:border-cyan-500 focus:outline-none"
+                  className="text-xs font-mono"
                 />
               </div>
 
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Audit Template:</label>
+              <div className="space-y-1">
+                <Label className="text-muted-foreground">Audit Template:</Label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-lg px-3 py-2 text-slate-200 text-xs focus:border-cyan-500 focus:outline-none"
+                  className="w-full bg-surface-sunken border border-border rounded-md px-2.5 py-1.5 text-foreground text-xs font-mono"
                 >
                   <option value="SHIFT_AUDIT">Shift Splice Wear &amp; RUL Log</option>
                   <option value="DUMP_FILTER_LOG">Dump-Vibration False Alarm Audit</option>
@@ -269,33 +295,36 @@ export default function ReportsTable({
                 </select>
               </div>
 
-              <div className="p-3 bg-[#0a0d14] rounded-xl border border-[#1f293d] text-[11px] text-slate-400 space-y-1">
-                <span className="text-cyan-400 font-bold block">Live Telemetry Snapshot Included:</span>
+              <div className="p-2.5 bg-surface-sunken rounded-md border border-border text-[10px] text-muted-foreground space-y-0.5 font-mono">
+                <span className="text-primary font-bold block">Live Telemetry Snapshot Included:</span>
                 <div>• All 6 Vulcanized Splice Health Scores &amp; Thickness readings</div>
                 <div>• DumpNoiseFilter suppressions &amp; Peak Vibration harmonics</div>
                 <div>• AI Remaining Useful Life projections</div>
               </div>
+            </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#1f293d]">
-                <button
-                  type="button"
-                  onClick={() => setShowGenerateModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs font-semibold rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-lg flex items-center gap-1.5 shadow"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Generate &amp; Download CSV
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowGenerateModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="default"
+                size="sm"
+                className="gap-1.5 font-bold font-mono"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Generate &amp; Download CSV
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

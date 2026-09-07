@@ -1,55 +1,41 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const ThemeContext = createContext();
+const ThemeContext = createContext({
+  theme: 'industrial',
+  setTheme: () => {},
+  toggleTheme: () => {}
+});
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    try {
-      const saved = localStorage.getItem('smartconveyor_theme');
-      return saved === 'hematite' ? 'hematite' : 'obsidian';
-    } catch {
-      return 'hematite'; // Default to the new stunning Hematite Ore theme
-    }
+    return localStorage.getItem('smartconveyor_theme') || 'industrial';
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem('smartconveyor_theme', theme);
-    } catch (e) {
-      console.warn('Could not save theme to localStorage:', e);
-    }
-
     const root = document.documentElement;
-    if (theme === 'hematite') {
-      root.classList.add('theme-hematite');
-      root.classList.remove('theme-obsidian', 'theme-cyber', 'dark', 'light');
-      root.setAttribute('data-theme', 'hematite');
-      root.style.colorScheme = 'dark';
-    } else {
-      root.classList.add('theme-obsidian', 'dark');
-      root.classList.remove('theme-hematite', 'theme-cyber', 'light');
-      root.setAttribute('data-theme', 'obsidian');
-      root.style.colorScheme = 'dark';
+    root.classList.remove('theme-dark', 'theme-light', 'dark');
+
+    if (theme === 'dark') {
+      root.classList.add('theme-dark', 'dark');
+    } else if (theme === 'light') {
+      root.classList.add('theme-light');
     }
+    // Default 'industrial' has no class modifier since :root is the Industrial Cobalt Slate palette
+
+    localStorage.setItem('smartconveyor_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'hematite' ? 'obsidian' : 'hematite'));
+    setTheme(prev => (prev === 'industrial' ? 'dark' : prev === 'dark' ? 'light' : 'industrial'));
   };
 
-  const isHematite = theme === 'hematite';
-
   return (
-    <ThemeContext.Provider value={{ theme, isHematite, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
+  return useContext(ThemeContext);
 }

@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { loginAsRole, loginWithCredentials, DEMO_USERS } from '../firebase/auth.js';
 import { USER_ROLES } from '../../../shared/constants.js';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card.jsx';
+import { Button } from '../components/ui/button.jsx';
+import { Input } from '../components/ui/input.jsx';
+import { Label } from '../components/ui/label.jsx';
+import { Badge } from '../components/ui/badge.jsx';
 import {
   Cpu,
-  Shield,
-  Wrench,
-  UserCheck,
   Lock,
   Mail,
   ArrowRight,
-  Zap,
-  Building2
+  Building2,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
+import { cn } from '../lib/utils.js';
 
 export default function Login({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -42,40 +46,40 @@ export default function Login({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden bg-grid-pattern select-none">
       
       {/* Background glow accents */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-blue-600/10 blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-sky-500/10 blur-3xl pointer-events-none" />
 
-      <div className="max-w-md w-full space-y-6 relative z-10">
+      <div className="max-w-md w-full space-y-4 relative z-10">
         
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-xl shadow-cyan-500/25 mb-2">
-            <Cpu className="w-8 h-8 text-slate-950 font-black" />
+        <div className="text-center space-y-1.5">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded bg-primary/20 border border-primary/40 text-primary shadow-lg mb-1">
+            <Cpu className="w-6 h-6 text-primary" />
           </div>
 
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
-            Smart<span className="text-cyan-400">Conveyor</span>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+            Smart<span className="text-primary">Conveyor</span>
           </h1>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111726] border border-[#1f293d] text-[11px] font-mono text-cyan-300">
-            <Building2 className="w-3.5 h-3.5 text-cyan-400" />
-            NMDC BAILADILA IRON ORE MINES | SIH 26008
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-surface-sunken border border-border text-[10px] font-mono text-cyan-300">
+            <Building2 className="w-3 h-3 text-primary" />
+            NMDC BAILADILA IRON ORE MINES • SIH 26008
           </div>
 
-          <p className="text-xs text-slate-400 max-w-xs mx-auto">
-            Intelligent Conveyor Belt Joint Rupture Monitoring &amp; Predictive Maintenance System
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+            Intelligent Conveyor Joint Rupture Monitoring &amp; Predictive Maintenance Console
           </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-[#111726] border border-[#1f293d] rounded-2xl p-6 shadow-2xl space-y-5 glow-border-cyan">
+        {/* Login Card */}
+        <Card className="p-5 shadow-2xl space-y-4 bg-surface border-border">
           
           {/* Quick Demo Access (1-Click) */}
-          <div className="space-y-2">
-            <div className="text-[11px] font-mono uppercase text-slate-400 tracking-wider font-semibold">
+          <div className="space-y-1.5">
+            <div className="text-[10px] font-mono uppercase text-muted-foreground tracking-wider font-bold">
               Instant 1-Click Role Login
             </div>
 
@@ -84,88 +88,88 @@ export default function Login({ onLoginSuccess }) {
                 type="button"
                 onClick={() => handleQuickLogin('operator')}
                 disabled={loading}
-                className="p-3 bg-[#0a0d14] hover:bg-slate-800 border border-[#1f293d] hover:border-cyan-500/50 rounded-xl transition-all flex flex-col items-center gap-1 text-center group"
+                className="p-2.5 bg-surface-sunken hover:bg-muted border border-border hover:border-primary/50 rounded transition-all flex flex-col items-center gap-1 text-center group cursor-pointer"
               >
-                <span className="text-xl">👷‍♂️</span>
-                <span className="text-[11px] font-bold text-slate-200 group-hover:text-cyan-400">Operator</span>
-                <span className="text-[9px] font-mono text-slate-500">Live Control</span>
+                <span className="text-lg">👷‍♂️</span>
+                <span className="text-[11px] font-bold text-foreground group-hover:text-primary">Operator</span>
+                <span className="text-[9px] font-mono text-muted-foreground">Live Control</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickLogin('engineer')}
                 disabled={loading}
-                className="p-3 bg-[#0a0d14] hover:bg-slate-800 border border-[#1f293d] hover:border-cyan-500/50 rounded-xl transition-all flex flex-col items-center gap-1 text-center group"
+                className="p-2.5 bg-surface-sunken hover:bg-muted border border-border hover:border-primary/50 rounded transition-all flex flex-col items-center gap-1 text-center group cursor-pointer"
               >
-                <span className="text-xl">👩‍🔧</span>
-                <span className="text-[11px] font-bold text-slate-200 group-hover:text-cyan-400">Engineer</span>
-                <span className="text-[9px] font-mono text-slate-500">RUL &amp; Splice</span>
+                <span className="text-lg">👩‍🔧</span>
+                <span className="text-[11px] font-bold text-foreground group-hover:text-primary">Engineer</span>
+                <span className="text-[9px] font-mono text-muted-foreground">RUL &amp; Splice</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickLogin('admin')}
                 disabled={loading}
-                className="p-3 bg-[#0a0d14] hover:bg-slate-800 border border-[#1f293d] hover:border-cyan-500/50 rounded-xl transition-all flex flex-col items-center gap-1 text-center group"
+                className="p-2.5 bg-surface-sunken hover:bg-muted border border-border hover:border-primary/50 rounded transition-all flex flex-col items-center gap-1 text-center group cursor-pointer"
               >
-                <span className="text-xl">🛡️</span>
-                <span className="text-[11px] font-bold text-slate-200 group-hover:text-cyan-400">Admin</span>
-                <span className="text-[9px] font-mono text-slate-500">E-Stop Reset</span>
+                <span className="text-lg">🛡️</span>
+                <span className="text-[11px] font-bold text-foreground group-hover:text-primary">Admin</span>
+                <span className="text-[9px] font-mono text-muted-foreground">E-Stop Reset</span>
               </button>
             </div>
           </div>
 
           <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-[#1f293d]" />
-            <span className="flex-shrink mx-3 text-[10px] font-mono text-slate-500 uppercase">
-              Or Custom Credentials
+            <div className="flex-grow border-t border-border" />
+            <span className="flex-shrink mx-2 text-[9px] font-mono text-muted-foreground uppercase">
+              Or Custom Authority
             </span>
-            <div className="flex-grow border-t border-[#1f293d]" />
+            <div className="flex-grow border-t border-border" />
           </div>
 
           {/* Form */}
-          <form onSubmit={handleCustomLogin} className="space-y-3.5 text-xs">
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">
+          <form onSubmit={handleCustomLogin} className="space-y-3 text-xs">
+            <div className="space-y-1">
+              <Label className="text-muted-foreground font-semibold text-xs">
                 NMDC Staff Email:
-              </label>
+              </Label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
+                <Mail className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
                   type="email"
                   required
                   placeholder="name@nmdc.co.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl pl-9 pr-3 py-2.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+                  className="pl-9 h-8 text-xs font-mono"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">
+            <div className="space-y-1">
+              <Label className="text-muted-foreground font-semibold text-xs">
                 Password:
-              </label>
+              </Label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
+                <Lock className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
                   type="password"
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl pl-9 pr-3 py-2.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+                  className="pl-9 h-8 text-xs font-mono"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-slate-300 font-semibold mb-1">
+            <div className="space-y-1">
+              <Label className="text-muted-foreground font-semibold text-xs">
                 Role Authority:
-              </label>
+              </Label>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-[#0a0d14] border border-[#1f293d] rounded-xl px-3 py-2.5 text-slate-200 focus:border-cyan-500 focus:outline-none"
+                className="w-full bg-surface-sunken border border-border rounded-md px-2.5 py-1.5 text-foreground focus:border-primary focus:outline-none font-mono text-xs"
               >
                 <option value={USER_ROLES.OPERATOR}>Control Shift Operator</option>
                 <option value={USER_ROLES.ENGINEER}>Maintenance Engineer</option>
@@ -173,20 +177,22 @@ export default function Login({ onLoginSuccess }) {
               </select>
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="default"
+              size="lg"
               disabled={loading}
-              className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold rounded-xl shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 mt-2"
+              className="w-full gap-2 font-bold font-mono text-xs mt-2"
             >
               {loading ? 'Authenticating...' : 'Sign In to Plant Console'}
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Button>
           </form>
 
-        </div>
+        </Card>
 
         {/* Footer info */}
-        <div className="text-center text-[11px] font-mono text-slate-500">
+        <div className="text-center text-[10px] font-mono text-muted-foreground">
           NMDC Bailadila Complex • Conveyor Health Interlocking v1.0.0
         </div>
 
